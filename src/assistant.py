@@ -37,8 +37,8 @@ class TotoroAssistant:
         self.is_running = False
         logger.info("✅ Totoro Assistant initialized successfully!")
         
-        # Test the neural voice on startup
-        self.tts.speak("Hello! Totoro assistant ready with neural voice synthesis.")
+        # Test the Chatterbox voice on startup
+        self.tts.speak("Hello! Totoro assistant ready with Chatterbox neural voice synthesis.")
     
     def handle_voice_command(self, command: str):
         """Handle voice command from wake word detection"""
