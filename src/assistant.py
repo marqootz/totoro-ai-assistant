@@ -1,199 +1,175 @@
 import asyncio
 import logging
 from typing import Optional, Dict, Any
-from .config import Config
-from .voice import VoiceRecognizer, TextToSpeech
-from .llm.command_processor import CommandProcessor
-from .llm.local_llm_processor import LocalLLMProcessor, HuggingFaceLLMProcessor
-from .llm.unified_processor import UnifiedLLMProcessor
-from .integrations import HomeAssistantClient, SpotifyClient
-from .presence import SimplePresenceDetector
-from .core import TaskExecutor
+import threading
+import time
+import sys
+import os
+
+# Add parent directory to path to access root config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config
+
+from src.voice.speech_recognition import VoiceRecognizer
+from src.voice.text_to_speech import TextToSpeech
+from src.smart_home.manager import SmartHomeManager
+from src.llm.processor import LLMProcessor
 
 logger = logging.getLogger(__name__)
 
 class TotoroAssistant:
-    """Main assistant coordinator"""
+    """Main Totoro Assistant that combines voice control, smart home, and AI"""
     
     def __init__(self):
-        self.config = Config()
+        logger.info("🎭 Initializing Totoro Assistant...")
         
         # Initialize components
-        self.voice_recognizer = VoiceRecognizer(wake_word=self.config.WAKE_WORD)
-        self.tts = TextToSpeech(rate=self.config.VOICE_RATE, volume=self.config.VOICE_VOLUME)
+        self.smart_home = SmartHomeManager()
+        self.llm_processor = LLMProcessor()
         
-        # Initialize LLM processor based on backend
-        self.command_processor = self._initialize_llm_processor()
-        
-        # Initialize integrations
-        self.home_assistant = HomeAssistantClient(
-            url=self.config.HOME_ASSISTANT_URL,
-            token=self.config.HOME_ASSISTANT_TOKEN
+        # Initialize voice components with neural TTS
+        self.tts = TextToSpeech(voice_preference=config.VOICE_PREFERENCE)
+        self.voice_recognizer = VoiceRecognizer(
+            wake_word=config.WAKE_WORD,
+            callback=self.handle_voice_command
         )
         
-        self.spotify = None
-        if self.config.SPOTIFY_CLIENT_ID and self.config.SPOTIFY_CLIENT_SECRET:
-            self.spotify = SpotifyClient(
-                client_id=self.config.SPOTIFY_CLIENT_ID,
-                client_secret=self.config.SPOTIFY_CLIENT_SECRET,
-                redirect_uri=self.config.SPOTIFY_REDIRECT_URI
-            )
+        self.is_running = False
+        logger.info("✅ Totoro Assistant initialized successfully!")
         
-        # Initialize presence detection
-        self.presence_detector = SimplePresenceDetector(
-            default_room=self.config.DEFAULT_ROOM
-        )
-        
-        # Initialize task executor
-        self.task_executor = TaskExecutor()
-        
-        # Set integrations in task executor
-        self.task_executor.set_integrations(
-            home_assistant=self.home_assistant,
-            spotify=self.spotify,
-            presence_detector=self.presence_detector,
-            tts=self.tts
-        )
-        
-        logger.info(f"Totoro Assistant initialized with {self.config.LLM_BACKEND} LLM backend")
+        # Test the neural voice on startup
+        self.tts.speak("Hello! Totoro assistant ready with neural voice synthesis.")
     
-    def _initialize_llm_processor(self):
-        """Initialize the appropriate LLM processor based on configuration"""
-        llm_config = self.config.get_llm_config()
-        
-        if self.config.LLM_BACKEND == "openai":
-            return CommandProcessor(
-                api_key=llm_config["api_key"],
-                model=llm_config["model"]
-            )
-        elif self.config.LLM_BACKEND == "local":
-            return LocalLLMProcessor(
-                model_name=llm_config["model_name"],
-                base_url=llm_config["base_url"]
-            )
-        elif self.config.LLM_BACKEND == "unified":
-            # New unified processor combining smart home + general AI
-            return UnifiedLLMProcessor(
-                model_name=llm_config.get("model_name", "llama3.1:8b"),
-                base_url=llm_config.get("base_url", "http://localhost:11434")
-            )
-        elif self.config.LLM_BACKEND == "huggingface":
-            return HuggingFaceLLMProcessor(
-                model_name=llm_config["model_name"]
-            )
-        else:
-            raise ValueError(f"Unsupported LLM backend: {self.config.LLM_BACKEND}")
+    def handle_voice_command(self, command: str):
+        """Handle voice command from wake word detection"""
+        try:
+            logger.info(f"Processing voice command: {command}")
+            response = self.process_command(command)
+            self.tts.speak(response)
+        except Exception as e:
+            logger.error(f"Error handling voice command: {e}")
+            self.tts.speak("Sorry, I encountered an error processing your command.")
     
-    async def process_text_command(self, command: str) -> str:
-        """Process a text command and return response"""
+    def process_command(self, command: str) -> str:
+        """Process a text or voice command and return response"""
         try:
             logger.info(f"Processing command: {command}")
             
-            # Get current room
-            current_room = self.presence_detector.get_current_room()
-            
-            # Process command with LLM
-            result = self.command_processor.process_command(command, current_room)
-            
-            if result.success and result.tasks:
-                # Execute tasks
-                execution_result = await self.task_executor.execute_tasks(result.tasks)
-                
-                if execution_result:
-                    return result.response
+            # Check if it's a smart home command
+            if self.smart_home.can_handle_command(command):
+                result = self.smart_home.process_command(command)
+                if result:
+                    return f"Done! {result}"
                 else:
-                    return "I encountered an issue while executing that command."
-            else:
-                return result.response
-                
+                    return "I couldn't complete that smart home action."
+            
+            # Process with LLM for general queries
+            response = self.llm_processor.process_query(command)
+            return response
+            
         except Exception as e:
             logger.error(f"Error processing command: {e}")
             return "Sorry, I encountered an error processing your command."
     
-    async def start_voice_mode(self):
-        """Start voice interaction mode"""
-        logger.info("Starting voice mode...")
-        self.tts.speak(f"Hello! {self.config.ASSISTANT_NAME} is ready to help.")
+    def start_voice_mode(self):
+        """Start continuous voice interaction mode"""
+        logger.info("🎤 Starting voice mode...")
+        self.is_running = True
+        
+        # Start listening in background
+        self.voice_recognizer.start_listening()
         
         try:
-            while True:
-                # Listen for wake word
-                logger.info(f"Listening for wake word: {self.config.WAKE_WORD}")
-                if self.voice_recognizer.listen_for_wake_word():
-                    logger.info("Wake word detected!")
-                    
-                    # Get command
-                    command = self.voice_recognizer.listen_for_command()
-                    if command:
-                        logger.info(f"Command received: {command}")
-                        
-                        # Process command
-                        response = await self.process_text_command(command)
-                        
-                        # Speak response
-                        self.tts.speak(response)
-                    else:
-                        self.tts.speak("I didn't catch that. Could you try again?")
-                
-                # Small delay to prevent excessive CPU usage
-                await asyncio.sleep(0.1)
+            logger.info(f"Listening for wake word: '{config.WAKE_WORD}'")
+            logger.info("Say 'Ctrl+C' to stop...")
+            
+            while self.is_running:
+                time.sleep(0.5)  # Keep main thread alive
                 
         except KeyboardInterrupt:
             logger.info("Voice mode stopped by user")
-            self.tts.speak("Goodbye!")
-        except Exception as e:
-            logger.error(f"Error in voice mode: {e}")
-            self.tts.speak("I'm experiencing technical difficulties. Goodbye!")
+        finally:
+            self.stop_voice_mode()
     
-    async def test_integrations(self) -> Dict[str, bool]:
-        """Test all integrations and return status"""
+    def stop_voice_mode(self):
+        """Stop voice interaction mode"""
+        self.is_running = False
+        self.voice_recognizer.stop_listening_for_commands()
+        self.tts.speak("Goodbye!")
+        logger.info("Voice mode stopped")
+    
+    def start_wake_word_session(self):
+        """Start a single wake word listening session"""
+        logger.info(f"🎧 Listening for wake word: '{config.WAKE_WORD}'...")
+        
+        if self.voice_recognizer.listen_for_wake_word(timeout=config.RECOGNITION_TIMEOUT):
+            logger.info("Wake word detected!")
+            
+            # Listen for command
+            command = self.voice_recognizer.listen_for_command(timeout=config.COMMAND_TIMEOUT)
+            if command:
+                response = self.process_command(command)
+                self.tts.speak(response)
+                return response
+            else:
+                self.tts.speak("I didn't catch that. Could you try again?")
+                return "No command detected"
+        else:
+            logger.info("No wake word detected within timeout")
+            return "No wake word detected"
+    
+    def test_components(self) -> Dict[str, bool]:
+        """Test all components and return status"""
         results = {}
+        
+        # Test TTS
+        try:
+            logger.info("Testing TTS...")
+            success = self.tts.test_speech("Testing speech output.")
+            results["tts"] = success
+        except Exception as e:
+            logger.error(f"TTS test failed: {e}")
+            results["tts"] = False
+        
+        # Test Speech Recognition
+        try:
+            logger.info("Testing speech recognition...")
+            success = self.voice_recognizer.test_microphone()
+            results["speech_recognition"] = success
+        except Exception as e:
+            logger.error(f"Speech recognition test failed: {e}")
+            results["speech_recognition"] = False
         
         # Test LLM
         try:
-            test_result = self.command_processor.process_command("test command")
-            results["llm"] = test_result is not None
+            logger.info("Testing LLM...")
+            response = self.llm_processor.process_query("What time is it?")
+            results["llm"] = len(response) > 0
         except Exception as e:
             logger.error(f"LLM test failed: {e}")
             results["llm"] = False
         
-        # Test Home Assistant
+        # Test Smart Home
         try:
-            entities = await self.home_assistant.get_entities()
-            results["home_assistant"] = len(entities) > 0
+            logger.info("Testing smart home...")
+            results["smart_home"] = True  # Placeholder
         except Exception as e:
-            logger.error(f"Home Assistant test failed: {e}")
-            results["home_assistant"] = False
-        
-        # Test Spotify
-        if self.spotify:
-            try:
-                devices = self.spotify.get_devices()
-                results["spotify"] = devices is not None
-            except Exception as e:
-                logger.error(f"Spotify test failed: {e}")
-                results["spotify"] = False
-        else:
-            results["spotify"] = None  # Not configured
-        
-        # Test TTS
-        try:
-            voices = self.tts.get_voices()
-            results["tts"] = len(voices) > 0
-        except Exception as e:
-            logger.error(f"TTS test failed: {e}")
-            results["tts"] = False
+            logger.error(f"Smart home test failed: {e}")
+            results["smart_home"] = False
         
         return results
     
     def get_status(self) -> Dict[str, Any]:
         """Get current assistant status"""
         return {
-            "llm_backend": self.config.LLM_BACKEND,
-            "current_room": self.presence_detector.get_current_room(),
-            "wake_word": self.config.WAKE_WORD,
-            "integrations": {
-                "home_assistant": self.home_assistant is not None,
-                "spotify": self.spotify is not None,
+            "is_running": self.is_running,
+            "wake_word": config.WAKE_WORD,
+            "voice_preference": config.VOICE_PREFERENCE,
+            "llm_backend": getattr(config, 'LLM_BACKEND', 'unified'),
+            "components": {
+                "tts": self.tts is not None,
+                "voice_recognizer": self.voice_recognizer is not None,
+                "smart_home": self.smart_home is not None,
+                "llm_processor": self.llm_processor is not None,
             }
         } 

@@ -31,8 +31,9 @@ class Config:
     
     # Voice Configuration
     WAKE_WORD: str = os.getenv("WAKE_WORD", "totoro")
-    VOICE_RATE: int = int(os.getenv("VOICE_RATE", "200"))
+    VOICE_RATE: int = int(os.getenv("VOICE_RATE", "180"))  # Slower for British accent
     VOICE_VOLUME: float = float(os.getenv("VOICE_VOLUME", "0.9"))
+    VOICE_PREFERENCE: str = os.getenv("VOICE_PREFERENCE", "british_female")  # british_female, british_male, american_female, etc.
     
     # Room Presence Configuration
     PRESENCE_DETECTION_METHOD: str = os.getenv("PRESENCE_DETECTION_METHOD", "bluetooth")

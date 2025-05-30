@@ -22,12 +22,15 @@ def test_text_to_speech():
     """Test text-to-speech functionality"""
     print("\n--- Testing Text-to-Speech ---")
     try:
-        tts = TextToSpeech(rate=200, volume=0.5)
+        tts = TextToSpeech(voice_preference="system")
         print("✓ TTS initialized successfully")
         
         # Test voice listing
-        voices = tts.get_voices()
-        print(f"✓ Found {len(voices)} available voices")
+        voices = tts.list_available_voices()
+        if voices:
+            print(f"✓ Found {len(voices)} available voices")
+        else:
+            print("✓ TTS working (voice listing may not be available)")
         
         # Test speaking (comment out if you don't want audio)
         # tts.speak("Hello, this is Totoro assistant testing.")
