@@ -23,6 +23,11 @@ class TotoroAssistant:
     def __init__(self):
         logger.info("🎭 Initializing Totoro Assistant...")
         
+        # Frontend state management
+        self.visual_state = 'idle'  # idle, awake, thinking, speaking
+        self.state_lock = threading.Lock()
+        self.state_callbacks = []
+        
         # Initialize components
         self.smart_home = SmartHomeManager()
         self.llm_processor = LLMProcessor()
@@ -38,17 +43,57 @@ class TotoroAssistant:
         logger.info("✅ Totoro Assistant initialized successfully!")
         
         # Test the Chatterbox voice on startup
+        self.set_visual_state('speaking')
         self.tts.speak("Hello! Totoro assistant ready with Chatterbox neural voice synthesis.")
+        self.set_visual_state('idle')
+    
+    def set_visual_state(self, state: str):
+        """Set the current visual state for the frontend"""
+        valid_states = ['idle', 'awake', 'thinking', 'speaking']
+        if state not in valid_states:
+            logger.warning(f"Invalid visual state: {state}")
+            return
+            
+        with self.state_lock:
+            if self.visual_state != state:
+                self.visual_state = state
+                logger.debug(f"Visual state changed to: {state}")
+                
+                # Notify any registered callbacks
+                for callback in self.state_callbacks:
+                    try:
+                        callback(state)
+                    except Exception as e:
+                        logger.error(f"Error in state callback: {e}")
+    
+    def get_visual_state(self) -> str:
+        """Get the current visual state"""
+        with self.state_lock:
+            return self.visual_state
+    
+    def register_state_callback(self, callback):
+        """Register a callback to be called when state changes"""
+        self.state_callbacks.append(callback)
     
     def handle_voice_command(self, command: str):
         """Handle voice command from wake word detection"""
         try:
             logger.info(f"Processing voice command: {command}")
+            self.set_visual_state('awake')
+            time.sleep(0.5)  # Brief awake moment
+            
+            self.set_visual_state('thinking')
             response = self.process_command(command)
+            
+            self.set_visual_state('speaking')
             self.tts.speak(response)
+            
+            self.set_visual_state('idle')
         except Exception as e:
             logger.error(f"Error handling voice command: {e}")
+            self.set_visual_state('speaking')
             self.tts.speak("Sorry, I encountered an error processing your command.")
+            self.set_visual_state('idle')
     
     def process_command(self, command: str) -> str:
         """Process a text or voice command and return response"""
@@ -75,6 +120,7 @@ class TotoroAssistant:
         """Start continuous voice interaction mode"""
         logger.info("🎤 Starting voice mode...")
         self.is_running = True
+        self.set_visual_state('idle')
         
         # Start listening in background
         self.voice_recognizer.start_listening()
@@ -95,27 +141,41 @@ class TotoroAssistant:
         """Stop voice interaction mode"""
         self.is_running = False
         self.voice_recognizer.stop_listening_for_commands()
+        
+        self.set_visual_state('speaking')
         self.tts.speak("Goodbye!")
+        self.set_visual_state('idle')
+        
         logger.info("Voice mode stopped")
     
     def start_wake_word_session(self):
         """Start a single wake word listening session"""
         logger.info(f"🎧 Listening for wake word: '{config.WAKE_WORD}'...")
+        self.set_visual_state('idle')
         
         if self.voice_recognizer.listen_for_wake_word(timeout=config.RECOGNITION_TIMEOUT):
             logger.info("Wake word detected!")
+            self.set_visual_state('awake')
+            time.sleep(0.5)
             
             # Listen for command
             command = self.voice_recognizer.listen_for_command(timeout=config.COMMAND_TIMEOUT)
             if command:
+                self.set_visual_state('thinking')
                 response = self.process_command(command)
+                
+                self.set_visual_state('speaking')
                 self.tts.speak(response)
+                self.set_visual_state('idle')
                 return response
             else:
+                self.set_visual_state('speaking')
                 self.tts.speak("I didn't catch that. Could you try again?")
+                self.set_visual_state('idle')
                 return "No command detected"
         else:
             logger.info("No wake word detected within timeout")
+            self.set_visual_state('idle')
             return "No wake word detected"
     
     def test_components(self) -> Dict[str, bool]:
@@ -163,6 +223,7 @@ class TotoroAssistant:
         """Get current assistant status"""
         return {
             "is_running": self.is_running,
+            "visual_state": self.get_visual_state(),
             "wake_word": config.WAKE_WORD,
             "voice_preference": config.VOICE_PREFERENCE,
             "llm_backend": getattr(config, 'LLM_BACKEND', 'unified'),

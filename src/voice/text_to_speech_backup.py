@@ -11,7 +11,7 @@ import torchaudio as ta
 logger = logging.getLogger(__name__)
 
 class TextToSpeech:
-    """Text-to-speech with Chatterbox TTS (Resemble AI) - FIXED to prevent double audio"""
+    """Text-to-speech with Chatterbox TTS (Resemble AI)"""
     
     def __init__(self, voice_preference: str = "chatterbox"):
         self.voice_preference = voice_preference
@@ -19,33 +19,23 @@ class TextToSpeech:
         self.chatterbox_model = None
         self._lock = threading.Lock()
         
-        # CRITICAL FIX: Only initialize the audio system once
-        self._audio_initialized = False
-        self._init_audio_system()
-        
-        # Initialize TTS engines based on preference
-        if voice_preference == "chatterbox":
-            self._init_chatterbox_tts()
-            # Only fallback if Chatterbox completely fails
-            if not self.chatterbox_model:
-                logger.warning("Chatterbox TTS failed, initializing system TTS fallback")
-                self._init_pyttsx3()
-        else:
-            # For system preference, only use pyttsx3
-            self._init_pyttsx3()
-    
-    def _init_audio_system(self):
-        """Initialize audio system once to prevent conflicts"""
-        if self._audio_initialized:
-            return
-            
+        # Initialize pygame mixer for audio playback
         try:
-            pygame.mixer.quit()  # Ensure clean state
             pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=1024)
-            self._audio_initialized = True
-            logger.info("✅ Audio mixer initialized (fixed)")
+            logger.info("Audio mixer initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize audio mixer: {e}")
+        
+        # Try to initialize Chatterbox TTS first
+        if voice_preference == "chatterbox":
+            self._init_chatterbox_tts()
+            # If Chatterbox TTS failed, fall back to system preference
+            if not self.chatterbox_model:
+                logger.info("Switching to system TTS as fallback")
+                self.voice_preference = "system"
+        
+        # Always initialize fallback pyttsx3
+        self._init_pyttsx3()
     
     def _init_chatterbox_tts(self):
         """Initialize Chatterbox TTS for high-quality neural voices"""
@@ -145,17 +135,15 @@ class TextToSpeech:
                         logger.info(f"Using voice: {voices[0].name}")
             
             # Set speech rate and volume
-            self.tts_engine.setProperty('rate', 180)
+            self.tts_engine.setProperty('rate', 180)  # Moderate speed
             self.tts_engine.setProperty('volume', 0.8)
-            
-            logger.info("✅ System TTS (pyttsx3) initialized")
             
         except Exception as e:
             logger.error(f"Failed to initialize fallback TTS: {e}")
             self.tts_engine = None
     
     def speak(self, text: str, audio_prompt_path: Optional[str] = None) -> bool:
-        """Speak text using ONLY ONE TTS engine to prevent double audio
+        """Speak text using Chatterbox TTS (preferred) or fallback
         
         Args:
             text: Text to synthesize
@@ -165,34 +153,14 @@ class TextToSpeech:
             return False
         
         with self._lock:
-            logger.info(f"🗣️ Speaking with {self.voice_preference} TTS: {text[:50]}...")
-            
-            # CRITICAL FIX: Use ONLY the preferred engine, no fallback unless it completely fails
-            if self.voice_preference == "chatterbox" and self.chatterbox_model:
-                success = self._speak_chatterbox(text, audio_prompt_path)
-                if success:
-                    logger.info("✅ Chatterbox TTS completed successfully")
+            # Try Chatterbox TTS first
+            if self.chatterbox_model and self.voice_preference == "chatterbox":
+                if self._speak_chatterbox(text, audio_prompt_path):
                     return True
-                else:
-                    logger.error("❌ Chatterbox TTS failed completely")
-                    # Only fallback on complete failure
-                    if self.tts_engine:
-                        logger.warning("🔄 Falling back to system TTS due to Chatterbox failure")
-                        return self._speak_pyttsx3(text)
-                    return False
+                logger.warning("Chatterbox TTS failed, falling back to system TTS")
             
-            # For system preference or if Chatterbox not available
-            elif self.tts_engine:
-                success = self._speak_pyttsx3(text)
-                if success:
-                    logger.info("✅ System TTS completed successfully")
-                    return True
-                else:
-                    logger.error("❌ System TTS failed")
-                    return False
-            else:
-                logger.error("❌ No TTS engine available")
-                return False
+            # Fall back to pyttsx3
+            return self._speak_pyttsx3(text)
     
     def _speak_chatterbox(self, text: str, audio_prompt_path: Optional[str] = None) -> bool:
         """Speak using Chatterbox TTS"""
@@ -209,7 +177,7 @@ class TextToSpeech:
                 temp_path = temp_file.name
             
             # Generate speech with Chatterbox TTS
-            logger.debug(f"Generating Chatterbox speech...")
+            logger.debug(f"Generating Chatterbox speech for: {text[:50]}...")
             
             # Generate audio with optional voice cloning and config parameters
             if audio_prompt_path and os.path.exists(audio_prompt_path):
@@ -229,11 +197,6 @@ class TextToSpeech:
             
             # Save the generated audio
             ta.save(temp_path, wav, self.chatterbox_model.sr)
-            
-            # CRITICAL FIX: Stop any previous audio before playing new
-            if pygame.mixer.music.get_busy():
-                pygame.mixer.music.stop()
-                time.sleep(0.1)  # Brief pause
             
             # Play the generated audio
             pygame.mixer.music.load(temp_path)
@@ -262,22 +225,16 @@ class TextToSpeech:
         """Speak using pyttsx3 fallback"""
         try:
             if not self.tts_engine:
-                logger.error("No system TTS engine available")
+                logger.error("No TTS engine available")
                 return False
             
-            logger.debug(f"Speaking with system TTS...")
-            
-            # CRITICAL FIX: Stop any pygame audio before using pyttsx3
-            if pygame.mixer.get_init() and pygame.mixer.music.get_busy():
-                pygame.mixer.music.stop()
-                time.sleep(0.1)
-            
+            logger.debug(f"Speaking with fallback TTS: {text[:50]}...")
             self.tts_engine.say(text)
             self.tts_engine.runAndWait()
             return True
             
         except Exception as e:
-            logger.error(f"System TTS error: {e}")
+            logger.error(f"Fallback TTS error: {e}")
             return False
     
     def set_voice_preference(self, preference: str):
@@ -306,23 +263,23 @@ class TextToSpeech:
             logger.error(f"Error listing voices: {e}")
         return []
     
-    def test_speech(self, text: str = "Hello! I'm your Totoro assistant with fixed audio - no more double voice!"):
+    def test_speech(self, text: str = "Hello! I'm your Totoro assistant with Chatterbox neural voice synthesis."):
         """Test speech output"""
         logger.info("Testing speech output...")
         
-        if self.voice_preference == "chatterbox" and self.chatterbox_model:
-            logger.info("🎤 Testing Chatterbox TTS (fixed)...")
+        if self.chatterbox_model:
+            logger.info("🎤 Testing Chatterbox TTS...")
             success = self._speak_chatterbox(text)
             if success:
-                logger.info("✅ Chatterbox TTS working - no double audio!")
+                logger.info("✅ Chatterbox TTS working!")
                 return True
             else:
                 logger.warning("❌ Chatterbox TTS failed")
         
-        logger.info("🔄 Testing system TTS...")
+        logger.info("🔄 Testing fallback TTS...")
         success = self._speak_pyttsx3(text)
         if success:
-            logger.info("✅ System TTS working!")
+            logger.info("✅ Fallback TTS working!")
             return True
         else:
             logger.error("❌ All TTS methods failed!")

@@ -1,0 +1,433 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    text-align: center;
+    position: relative;
+}
+
+.assistant-face {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto 30px;
+}
+
+/* Head outline */
+.head {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 260px;
+    height: 260px;
+    border: 3px solid #4a9eff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* Eyes container */
+.eyes {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 60px;
+    align-items: center;
+}
+
+/* Individual eyes */
+.eye {
+    width: 40px;
+    height: 40px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* Pupils */
+.pupil {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #333;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+/* Status ring around the face */
+.status-ring {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 280px;
+    height: 280px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* Status text */
+.status-text {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    opacity: 0.8;
+}
+
+/* Test controls */
+.test-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.test-controls button {
+    padding: 10px 20px;
+    background: #4a9eff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.test-controls button:hover {
+    background: #357abd;
+}
+
+/* State-specific animations */
+
+/* IDLE STATE */
+.state-idle .head {
+    border-color: #4a9eff;
+    filter: drop-shadow(0 0 10px rgba(74, 158, 255, 0.3));
+}
+
+.state-idle .eye {
+    animation: blink 4s infinite;
+}
+
+.state-idle .pupil {
+    animation: look-around 6s infinite ease-in-out;
+}
+
+.state-idle .status-ring {
+    border-color: rgba(74, 158, 255, 0.3);
+    animation: pulse-idle 3s infinite ease-in-out;
+}
+
+/* AWAKE STATE */
+.state-awake .head {
+    border-color: #00ff88;
+    filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.5));
+}
+
+.state-awake .eye {
+    transform: scale(1.1);
+}
+
+.state-awake .pupil {
+    background: #00ff88;
+    animation: alert-pupils 0.5s ease-in-out;
+}
+
+.state-awake .status-ring {
+    border-color: #00ff88;
+    animation: pulse-awake 1.5s infinite ease-in-out;
+}
+
+/* THINKING STATE */
+.state-thinking .head {
+    border-color: #ffa500;
+    filter: drop-shadow(0 0 12px rgba(255, 165, 0, 0.4));
+}
+
+.state-thinking .eye {
+    animation: thinking-eyes 1s infinite ease-in-out alternate;
+}
+
+.state-thinking .pupil {
+    background: #ffa500;
+    animation: thinking-pupils 2s infinite ease-in-out;
+}
+
+.state-thinking .status-ring {
+    border-color: #ffa500;
+    border-style: dashed;
+    animation: rotate 3s linear infinite, pulse-thinking 2s infinite ease-in-out;
+}
+
+/* SPEAKING STATE */
+.state-speaking .head {
+    border-color: #ff4757;
+    filter: drop-shadow(0 0 12px rgba(255, 71, 87, 0.4));
+    animation: speaking-bounce 0.3s infinite ease-in-out alternate;
+}
+
+.state-speaking .eye {
+    animation: speaking-eyes 0.4s infinite ease-in-out alternate;
+}
+
+.state-speaking .pupil {
+    background: #ff4757;
+    animation: speaking-pupils 0.5s infinite ease-in-out;
+}
+
+.state-speaking .status-ring {
+    border-color: #ff4757;
+    animation: pulse-speaking 0.8s infinite ease-in-out;
+}
+
+/* LOADING STATE */
+.state-loading .head {
+    border-color: #9b59b6;
+    filter: drop-shadow(0 0 15px rgba(155, 89, 182, 0.5));
+    animation: loading-pulse 2s infinite ease-in-out;
+}
+
+.state-loading .eye {
+    animation: loading-eyes 3s infinite ease-in-out;
+}
+
+.state-loading .pupil {
+    background: #9b59b6;
+    animation: loading-dots 1.5s infinite ease-in-out;
+}
+
+.state-loading .status-ring {
+    border-color: #9b59b6;
+    border-style: solid;
+    animation: loading-ring 2s linear infinite;
+}
+
+/* Loading progress bar */
+.loading-progress {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 4px;
+    background: rgba(155, 89, 182, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.loading-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #9b59b6, #e74c3c);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    animation: loading-shimmer 2s infinite;
+}
+
+.loading-text {
+    position: absolute;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #9b59b6;
+    white-space: nowrap;
+    animation: loading-text-pulse 2s infinite ease-in-out;
+}
+
+/* ERROR STATE */
+.state-error .head {
+    border-color: #e74c3c;
+    filter: drop-shadow(0 0 15px rgba(231, 76, 60, 0.5));
+    animation: error-shake 0.5s infinite ease-in-out;
+}
+
+.state-error .eye {
+    background: #e74c3c;
+    animation: error-blink 1s infinite ease-in-out;
+}
+
+.state-error .pupil {
+    background: #ffffff;
+    transform: translate(-50%, -50%) scale(0.5);
+}
+
+.state-error .status-ring {
+    border-color: #e74c3c;
+    border-style: solid;
+    animation: error-pulse 1s infinite ease-in-out;
+}
+
+/* Keyframe animations */
+
+@keyframes blink {
+    0%, 90%, 100% { height: 40px; }
+    95% { height: 4px; }
+}
+
+@keyframes look-around {
+    0%, 100% { transform: translate(-50%, -50%); }
+    25% { transform: translate(-70%, -50%); }
+    50% { transform: translate(-50%, -70%); }
+    75% { transform: translate(-30%, -50%); }
+}
+
+@keyframes pulse-idle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.02); }
+}
+
+@keyframes pulse-awake {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes pulse-thinking {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.03); }
+}
+
+@keyframes pulse-speaking {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes alert-pupils {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes thinking-eyes {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(0.9) rotate(2deg); }
+}
+
+@keyframes thinking-pupils {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-30%, -50%) rotate(90deg); }
+    50% { transform: translate(-50%, -30%) rotate(180deg); }
+    75% { transform: translate(-70%, -50%) rotate(270deg); }
+}
+
+@keyframes speaking-bounce {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.02); }
+}
+
+@keyframes speaking-eyes {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+@keyframes speaking-pupils {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+
+/* Loading and Error Keyframes */
+@keyframes loading-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes loading-eyes {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    33% { transform: scale(0.8) rotate(5deg); }
+    66% { transform: scale(1.1) rotate(-5deg); }
+}
+
+@keyframes loading-dots {
+    0% { transform: translate(-50%, -50%) scale(0.5); }
+    25% { transform: translate(-70%, -50%) scale(1); }
+    50% { transform: translate(-50%, -30%) scale(0.8); }
+    75% { transform: translate(-30%, -50%) scale(1); }
+    100% { transform: translate(-50%, -50%) scale(0.5); }
+}
+
+@keyframes loading-ring {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes loading-shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: 200px 0; }
+}
+
+@keyframes loading-text-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes error-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+@keyframes error-blink {
+    0%, 80%, 100% { opacity: 1; }
+    90% { opacity: 0.3; }
+}
+
+@keyframes error-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .assistant-face {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .head {
+        width: 210px;
+        height: 210px;
+    }
+    
+    .status-ring {
+        width: 230px;
+        height: 230px;
+    }
+    
+    .eyes {
+        gap: 50px;
+    }
+    
+    .eye {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .pupil {
+        width: 18px;
+        height: 18px;
+    }
+} 

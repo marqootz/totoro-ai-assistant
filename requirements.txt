@@ -16,4 +16,6 @@ librosa>=0.10.1
 soundfile>=0.12.1
 pygame>=2.5.2
 chatterbox-tts>=0.1.1
-torchaudio 
+torchaudio
+flask>=2.3.0
+flask-cors>=4.0.0 

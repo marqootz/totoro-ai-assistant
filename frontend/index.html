@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totoro Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="assistant-face" id="totoroFace">
+            <!-- Head outline -->
+            <div class="head"></div>
+            
+            <!-- Eyes -->
+            <div class="eyes">
+                <div class="eye left-eye" id="leftEye">
+                    <div class="pupil" id="leftPupil"></div>
+                </div>
+                <div class="eye right-eye" id="rightEye">
+                    <div class="pupil" id="rightPupil"></div>
+                </div>
+            </div>
+            
+            <!-- Status indicator -->
+            <div class="status-ring" id="statusRing"></div>
+            
+            <!-- Loading progress bar -->
+            <div class="loading-progress" id="loadingProgress" style="display: none;">
+                <div class="loading-progress-bar" id="loadingProgressBar" style="width: 0%;"></div>
+            </div>
+            
+            <!-- Loading text -->
+            <div class="loading-text" id="loadingText" style="display: none;">Starting up...</div>
+        </div>
+        
+        <!-- Status text -->
+        <div class="status-text" id="statusText">Initializing...</div>
+        
+        <!-- Test controls (for development) -->
+        <div class="test-controls">
+            <button onclick="setState('idle')">Idle</button>
+            <button onclick="setState('awake')">Awake</button>
+            <button onclick="setState('thinking')">Thinking</button>
+            <button onclick="setState('speaking')">Speaking</button>
+            <button onclick="setState('loading')">Loading</button>
+            <button onclick="setState('error')">Error</button>
+            <button onclick="startVoice()" style="background: #00ff88;">Start Voice</button>
+            <button onclick="stopVoice()" style="background: #ff4757;">Stop Voice</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
