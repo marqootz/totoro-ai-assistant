@@ -1,97 +1,97 @@
-# Totoro Personal Assistant 🎭
+# Totoro Personal Assistant 🦙
 
-A voice-controlled personal assistant that can control your smart home devices, play music, and perform chained tasks using natural language commands. Built with privacy and flexibility in mind.
+A **unified AI assistant** combining smart home excellence with general AI capabilities. Control your smart home devices, get information, perform calculations, and handle complex tasks using natural language - all with complete privacy and zero ongoing costs.
 
-## Features
+## ✨ What Makes Totoro Special
 
-- 🎤 **Voice Recognition** - Wake word detection and continuous listening
-- 🗣️ **Text-to-Speech** - Natural voice responses with 143+ voices
-- 🤖 **Multiple LLM Backends** - Choose between OpenAI, local models (Ollama), or Hugging Face
-- 🏠 **Home Assistant Integration** - Control lights, switches, and other smart devices
-- 🎵 **Spotify Integration** - Play music on different speakers/devices
-- 📍 **Room Presence Detection** - Context-aware commands based on your location
-- 🧠 **Smart Command Processing** - Understand complex, chained commands
-- ⚡ **Task Chaining** - Execute multiple actions from a single command
-- 🔒 **Privacy-First** - Option to run completely offline with local LLMs
+🏠 **Smart Home Excellence** - Perfect JSON-based command processing with 100% reliability  
+🤖 **General AI Capabilities** - Natural conversations, web search, calculations, and more  
+🔀 **Unified Commands** - Handle mixed requests like "turn on lights and what time is it?"  
+🔒 **Complete Privacy** - Runs entirely local with your own LLM (no cloud required)  
+⚡ **Zero Ongoing Costs** - Use your own hardware, no subscription fees  
+🎤 **Voice Control** - Natural wake word detection and continuous listening  
 
-## Example Commands
+## 🎯 Example Commands
 
-- *"Totoro, turn on the living room lights"*
-- *"Play some jazz music in the kitchen and dim the lights"*
-- *"Turn off all the lights and pause the music"*
-- *"Set the bedroom lights to 50% brightness"*
-- *"Play my workout playlist on the office speakers"*
+**Smart Home Control:**
+- *"Turn on the living room lights"*
+- *"Play jazz music and dim the bedroom lights to 30%"*
+- *"Set the temperature to 72 degrees"*
 
-## 🚀 Quick Start
+**General AI Queries:**
+- *"What time is it?"*
+- *"Calculate 15 * 23 + 45"*
+- *"What's the weather like in New York?"*
 
-### 1. Installation
+**Unified Commands (the magic!):**
+- *"Turn on the lights and what time is it?"*
+- *"Play music and calculate my electric bill: 150 watts * 8 hours"*
+- *"Dim bedroom lights to 25% and search for relaxing music"*
+
+## 🚀 Quick Start (3 Steps)
+
+### 1. Clone and Install
 ```bash
 git clone https://github.com/yourusername/totoro.git
 cd totoro
 pip install -r requirements.txt
 ```
 
-### 2. Choose Your LLM Backend
-
-#### Option A: OpenAI (Easiest, Best Quality)
+### 2. Enable Unified Assistant
 ```bash
-cp config.env.example .env
-# Edit .env and add your OpenAI API key
+python enable_unified_assistant.py
 ```
 
-#### Option B: Local LLM (Privacy-focused, Offline)
+### 3. Test Your Assistant
 ```bash
-# Install Ollama
-brew install ollama  # macOS
-# or visit https://ollama.ai for other platforms
+# Interactive test mode
+python main.py --test
 
-# Download a model
-ollama pull llama3.2
-
-# Start Ollama
-ollama serve
-
-# Configure Totoro
-cp config.env.example .env
-# Set LLM_BACKEND=local in .env
+# Try these commands:
+# - Turn on the living room lights
+# - What time is it?
+# - Play jazz music and calculate 20 * 30
 ```
 
-#### Option C: Hugging Face (Customizable, Free)
-```bash
-pip install transformers torch
-cp config.env.example .env
-# Set LLM_BACKEND=huggingface in .env
+## 🎭 Unified Architecture
+
+Totoro intelligently routes your commands to the right system:
+
+```
+Your Command: "Play music and what time is it?"
+     ↓
+🧠 Input Analysis
+     ↓
+🏠 Smart Home: play_music → JSON tasks
+🤖 General AI: get_time → Tool execution  
+     ↓
+🔗 Unified Response: "Playing music! The time is 3:42 PM"
 ```
 
-### 3. Configure Home Assistant
-Add your Home Assistant URL and long-lived access token to `.env`.
+## 🔧 LLM Backend Options
 
-### 4. Test the System
-```bash
-# Test basic functionality
-python test_basic.py
+| Backend | Privacy | Cost | Quality | Setup | Offline |
+|---------|---------|------|---------|-------|---------|
+| **Unified (Default)** | 🔒 100% | 🆓 Free | ⭐⭐⭐⭐ | Easy | ✅ Yes |
+| OpenAI | ⚠️ Cloud | 💰 $0.002/1k | ⭐⭐⭐⭐⭐ | Easy | ❌ No |
+| Local Only | 🔒 100% | 🆓 Free | ⭐⭐⭐ | Medium | ✅ Yes |
 
-# Test local LLM (if using local backend)
-python test_local_llm.py
+**Recommendation:** Start with the unified backend for the best balance of capabilities and privacy.
 
-# Test with a command
-python main.py --command "turn on the living room lights"
+## Features
 
-# Start voice mode
-python main.py
-```
-
-## 🔧 LLM Backend Comparison
-
-| Feature | OpenAI | Local (Ollama) | Hugging Face |
-|---------|--------|----------------|--------------|
-| **Privacy** | ❌ Cloud | ✅ Local | ✅ Local |
-| **Cost** | 💰 Pay per use | 🆓 Free | 🆓 Free |
-| **Setup** | Easy | Medium | Hard |
-| **Quality** | Excellent | Good | Fair |
-| **Speed** | Fast | Medium | Slow |
-| **Offline** | ❌ No | ✅ Yes | ✅ Yes |
-| **Customization** | Limited | High | Highest |
+- 🎤 **Voice Recognition** - Wake word detection and continuous listening
+- 🗣️ **Text-to-Speech** - Natural voice responses with 143+ voices
+- 🤖 **Multiple LLM Backends** - Choose between OpenAI, local models (Ollama), or unified
+- 🏠 **Home Assistant Integration** - Control lights, switches, and other smart devices
+- 🎵 **Spotify Integration** - Play music on different speakers/devices
+- 📍 **Room Presence Detection** - Context-aware commands based on your location
+- 🧠 **Smart Command Processing** - Understand complex, chained commands
+- ⚡ **Task Chaining** - Execute multiple actions from a single command
+- 🔍 **Web Search** - Real-time information lookup
+- 🧮 **Calculations** - Mathematical operations and computations
+- 🌤️ **Weather** - Current weather information
+- 💬 **Conversation Memory** - Maintains context across interactions
 
 ## Installation (Detailed)
 

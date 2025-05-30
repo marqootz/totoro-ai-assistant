@@ -9,13 +9,13 @@ class Config:
     """Configuration class for Totoro Personal Assistant"""
     
     # LLM Configuration
-    LLM_BACKEND: str = os.getenv("LLM_BACKEND", "openai")  # openai, local, huggingface
+    LLM_BACKEND: str = os.getenv("LLM_BACKEND", "unified")  # openai, local, unified, huggingface
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
     
     # Local LLM Configuration (Ollama, etc.)
     LOCAL_LLM_URL: str = os.getenv("LOCAL_LLM_URL", "http://localhost:11434")
-    LOCAL_LLM_MODEL: str = os.getenv("LOCAL_LLM_MODEL", "llama3.2")
+    LOCAL_LLM_MODEL: str = os.getenv("LOCAL_LLM_MODEL", "llama3.1:8b")
     
     # Hugging Face Configuration
     HUGGINGFACE_MODEL: str = os.getenv("HUGGINGFACE_MODEL", "microsoft/DialoGPT-medium")
@@ -48,7 +48,7 @@ class Config:
         """Validate that required configuration is present"""
         if cls.LLM_BACKEND == "openai":
             required_fields = [cls.OPENAI_API_KEY, cls.HOME_ASSISTANT_TOKEN]
-        elif cls.LLM_BACKEND == "local":
+        elif cls.LLM_BACKEND in ["local", "unified"]:
             required_fields = [cls.HOME_ASSISTANT_TOKEN]  # Only HA token required for local LLM
         elif cls.LLM_BACKEND == "huggingface":
             required_fields = [cls.HOME_ASSISTANT_TOKEN]  # Only HA token required for HF
@@ -78,7 +78,7 @@ class Config:
                 "api_key": cls.OPENAI_API_KEY,
                 "model": cls.OPENAI_MODEL
             }
-        elif cls.LLM_BACKEND == "local":
+        elif cls.LLM_BACKEND in ["local", "unified"]:
             return {
                 "base_url": cls.LOCAL_LLM_URL,
                 "model_name": cls.LOCAL_LLM_MODEL

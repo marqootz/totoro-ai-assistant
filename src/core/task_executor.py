@@ -14,9 +14,24 @@ class TaskExecutor:
                  spotify_client: Optional[Any] = None):
         self.home_assistant = home_assistant
         self.spotify_client = spotify_client
+        self.presence_detector = None
+        self.tts = None
         self.execution_history = []
         
         logger.info("Task executor initialized")
+    
+    def set_integrations(self, home_assistant=None, spotify=None, presence_detector=None, tts=None):
+        """Set or update integrations"""
+        if home_assistant is not None:
+            self.home_assistant = home_assistant
+        if spotify is not None:
+            self.spotify_client = spotify
+        if presence_detector is not None:
+            self.presence_detector = presence_detector
+        if tts is not None:
+            self.tts = tts
+        
+        logger.info("Task executor integrations updated")
     
     async def execute_tasks(self, tasks: List[Task]) -> Dict[str, Any]:
         """Execute a list of tasks in priority order"""

@@ -7,9 +7,10 @@ Main entry point for the voice-controlled smart home assistant
 import sys
 import os
 import argparse
+import asyncio
 from src.assistant import TotoroAssistant
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(description="Totoro Personal Assistant")
     parser.add_argument("--test", action="store_true", help="Run in test mode (text input only)")
     parser.add_argument("--command", type=str, help="Execute a single command and exit")
@@ -23,19 +24,25 @@ def main():
         
         # Set room if specified
         if args.room:
-            assistant.set_room(args.room)
+            assistant.presence_detector.set_current_room(args.room)
         
         if args.command:
             # Execute single command
             print(f"Executing command: {args.command}")
-            result = assistant.process_text_command(args.command)
+            result = await assistant.process_text_command(args.command)
             print(f"Result: {result}")
             return
         
         if args.test:
             # Test mode - text input only
-            print("Totoro Assistant - Test Mode")
+            print("🦙 Totoro Assistant - Unified Test Mode")
+            print("🏠 Smart Home + 🤖 General AI capabilities")
             print("Type commands or 'quit' to exit")
+            print("\nExamples:")
+            print("  - Turn on the living room lights")
+            print("  - What time is it?")
+            print("  - Play jazz music and what's the weather?")
+            print("  - Calculate 15 * 23")
             
             while True:
                 try:
@@ -44,14 +51,8 @@ def main():
                         break
                     
                     if command:
-                        result = assistant.process_text_command(command)
-                        print(f"Response: {result['command_result'].response}")
-                        
-                        if result['execution_result']:
-                            exec_result = result['execution_result']
-                            print(f"Executed {exec_result['executed']} tasks")
-                            if exec_result['errors']:
-                                print(f"Errors: {exec_result['errors']}")
+                        result = await assistant.process_text_command(command)
+                        print(f"🤖 Totoro: {result}")
                 
                 except KeyboardInterrupt:
                     break
@@ -59,7 +60,7 @@ def main():
             # Normal voice mode
             print("Starting Totoro Assistant in voice mode...")
             print("Press Ctrl+C to stop")
-            assistant.start()
+            await assistant.start_voice_mode()
     
     except KeyboardInterrupt:
         print("\nShutting down...")
@@ -68,4 +69,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

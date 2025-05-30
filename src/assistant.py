@@ -5,6 +5,7 @@ from .config import Config
 from .voice import VoiceRecognizer, TextToSpeech
 from .llm.command_processor import CommandProcessor
 from .llm.local_llm_processor import LocalLLMProcessor, HuggingFaceLLMProcessor
+from .llm.unified_processor import UnifiedLLMProcessor
 from .integrations import HomeAssistantClient, SpotifyClient
 from .presence import SimplePresenceDetector
 from .core import TaskExecutor
@@ -26,7 +27,7 @@ class TotoroAssistant:
         
         # Initialize integrations
         self.home_assistant = HomeAssistantClient(
-            base_url=self.config.HOME_ASSISTANT_URL,
+            url=self.config.HOME_ASSISTANT_URL,
             token=self.config.HOME_ASSISTANT_TOKEN
         )
         
@@ -69,6 +70,12 @@ class TotoroAssistant:
             return LocalLLMProcessor(
                 model_name=llm_config["model_name"],
                 base_url=llm_config["base_url"]
+            )
+        elif self.config.LLM_BACKEND == "unified":
+            # New unified processor combining smart home + general AI
+            return UnifiedLLMProcessor(
+                model_name=llm_config.get("model_name", "llama3.1:8b"),
+                base_url=llm_config.get("base_url", "http://localhost:11434")
             )
         elif self.config.LLM_BACKEND == "huggingface":
             return HuggingFaceLLMProcessor(
