@@ -214,6 +214,171 @@ def start_demo():
     
     return jsonify({'success': True, 'message': 'Enhanced demo started'})
 
+@app.route('/api/voice/start')
+def start_voice_listening():
+    """Start voice listening mode"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        # Start continuous voice mode
+        def start_voice_thread():
+            frontend_manager.assistant.start_voice_mode()
+        
+        voice_thread = threading.Thread(target=start_voice_thread, daemon=True)
+        voice_thread.start()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Voice listening started',
+            'wake_word': frontend_manager.assistant.voice_recognizer.wake_word if frontend_manager.assistant.voice_recognizer else 'totoro'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/voice/stop')
+def stop_voice_listening():
+    """Stop voice listening mode"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        frontend_manager.assistant.stop_voice_mode()
+        frontend_manager.set_state('idle')
+        return jsonify({'success': True, 'message': 'Voice listening stopped'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/voice/wake_session')
+def start_wake_session():
+    """Start a single wake word session"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        def wake_session_thread():
+            frontend_manager.set_state('idle')
+            response = frontend_manager.assistant.start_wake_word_session()
+            return response
+        
+        session_thread = threading.Thread(target=wake_session_thread, daemon=True)
+        session_thread.start()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Wake word session started',
+            'timeout': 30
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/voice/status')
+def get_voice_status():
+    """Get voice system status"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        voice_pref = 'unknown'
+        wake_word = 'totoro'
+        
+        # Safely get voice preference
+        if hasattr(frontend_manager.assistant, 'tts') and frontend_manager.assistant.tts:
+            voice_pref = getattr(frontend_manager.assistant.tts, 'voice_preference', 'unknown')
+        
+        # Safely get wake word
+        if hasattr(frontend_manager.assistant, 'voice_recognizer') and frontend_manager.assistant.voice_recognizer:
+            wake_word = getattr(frontend_manager.assistant.voice_recognizer, 'wake_word', 'totoro')
+        
+        return jsonify({
+            'success': True,
+            'is_running': frontend_manager.assistant.is_running,
+            'wake_word': wake_word,
+            'voice_preference': voice_pref,
+            'microphone_available': True
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/voice/debug')
+def voice_debug_info():
+    """Get detailed voice system debug information"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        debug_info = {
+            'success': True,
+            'timestamp': time.time(),
+            'assistant_status': {
+                'is_running': frontend_manager.assistant.is_running,
+                'visual_state': frontend_manager.assistant.get_visual_state(),
+            },
+            'voice_recognizer_status': {},
+            'tts_status': {},
+            'microphone_info': {}
+        }
+        
+        # Voice recognizer info
+        if hasattr(frontend_manager.assistant, 'voice_recognizer') and frontend_manager.assistant.voice_recognizer:
+            vr = frontend_manager.assistant.voice_recognizer
+            debug_info['voice_recognizer_status'] = {
+                'wake_word': getattr(vr, 'wake_word', 'unknown'),
+                'is_listening': getattr(vr, 'is_listening', False),
+                'microphone_available': vr.microphone is not None,
+            }
+            
+            # Try to get microphone names
+            try:
+                import speech_recognition as sr
+                mic_names = sr.Microphone.list_microphone_names()
+                debug_info['microphone_info'] = {
+                    'available_microphones': mic_names,
+                    'count': len(mic_names)
+                }
+            except Exception as e:
+                debug_info['microphone_info'] = {'error': str(e)}
+        
+        # TTS info
+        if hasattr(frontend_manager.assistant, 'tts') and frontend_manager.assistant.tts:
+            tts = frontend_manager.assistant.tts
+            debug_info['tts_status'] = {
+                'voice_preference': getattr(tts, 'voice_preference', 'unknown'),
+                'coqui_available': hasattr(tts, 'coqui_tts') and tts.coqui_tts is not None,
+                'system_available': hasattr(tts, 'system_available') and tts.system_available,
+            }
+        
+        return jsonify(debug_info)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/voice/test_quick')
+def quick_voice_test():
+    """Quick voice recognition test"""
+    if not frontend_manager.assistant:
+        return jsonify({'success': False, 'error': 'Assistant not available'}), 400
+    
+    try:
+        # Test microphone access
+        import speech_recognition as sr
+        r = sr.Recognizer()
+        mic = sr.Microphone()
+        
+        # Quick ambient noise adjustment
+        with mic as source:
+            r.adjust_for_ambient_noise(source, duration=0.5)
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Quick voice test completed',
+            'energy_threshold': r.energy_threshold,
+            'microphone_ready': True
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🎭 Starting Enhanced Totoro Frontend Server...")
     print("🌐 Frontend available at: http://localhost:5002")

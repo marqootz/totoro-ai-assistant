@@ -251,23 +251,110 @@ class TextToSpeech:
             return False
     
     def _speak_pyttsx3(self, text: str) -> bool:
-        """Speak using pyttsx3 fallback"""
+        """Speak using pyttsx3 via subprocess to avoid threading issues"""
         try:
             if not self.tts_engine:
                 logger.error("No system TTS engine available")
                 return False
             
-            logger.debug(f"Speaking with system TTS...")
+            logger.debug(f"Speaking with system TTS via subprocess...")
             
             # Stop any pygame audio before using pyttsx3
             if pygame.mixer.get_init() and pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
                 time.sleep(0.1)
             
-            self.tts_engine.say(text)
-            self.tts_engine.runAndWait()
-            return True
-            
+            # Use subprocess to completely isolate pyttsx3 from threading issues
+            try:
+                import subprocess
+                import sys
+                import os
+                
+                # Create a standalone script to run TTS
+                script_content = f'''
+import pyttsx3
+import sys
+
+def speak_text(text):
+    try:
+        engine = pyttsx3.init()
+        
+        # Configure voice settings
+        voices = engine.getProperty('voices')
+        if voices:
+            # Use Samantha or first available voice
+            for voice in voices:
+                if 'samantha' in voice.name.lower():
+                    engine.setProperty('voice', voice.id)
+                    break
+            else:
+                engine.setProperty('voice', voices[0].id)
+        
+        engine.setProperty('rate', 180)
+        engine.setProperty('volume', 0.8)
+        
+        # Speak the text
+        engine.say(text)
+        engine.runAndWait()
+        return True
+        
+    except Exception as e:
+        print(f"TTS Error: {{e}}", file=sys.stderr)
+        return False
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        text = " ".join(sys.argv[1:])
+        success = speak_text(text)
+        sys.exit(0 if success else 1)
+'''
+                
+                # Write the script to a temporary file
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                    f.write(script_content)
+                    script_path = f.name
+                
+                try:
+                    # Run TTS in a separate process with timeout
+                    result = subprocess.run(
+                        [sys.executable, script_path, text],
+                        timeout=30,  # 30 second timeout
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        logger.debug("Subprocess TTS completed successfully")
+                        return True
+                    else:
+                        logger.error(f"Subprocess TTS failed: {result.stderr}")
+                        return False
+                        
+                finally:
+                    # Clean up the temporary script
+                    try:
+                        os.unlink(script_path)
+                    except:
+                        pass
+                        
+            except subprocess.TimeoutExpired:
+                logger.error("TTS subprocess timed out")
+                return False
+            except Exception as subprocess_error:
+                logger.warning(f"Subprocess TTS failed: {subprocess_error}")
+                
+                # Fallback to the original approach as last resort
+                try:
+                    logger.info("Attempting direct TTS as fallback...")
+                    self.tts_engine.say(text)
+                    self.tts_engine.runAndWait()
+                    logger.debug("Direct TTS fallback succeeded")
+                    return True
+                except Exception as fallback_error:
+                    logger.error(f"All TTS approaches failed: {fallback_error}")
+                    return False
+                    
         except Exception as e:
             logger.error(f"System TTS error: {e}")
             return False

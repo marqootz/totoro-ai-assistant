@@ -21,12 +21,32 @@ class TotoroAssistant:
     """Main Totoro Assistant that combines voice control, smart home, and AI"""
     
     def __init__(self):
-        logger.info("🎭 Initializing Totoro Assistant...")
-        
-        # Frontend state management
-        self.visual_state = 'idle'  # idle, awake, thinking, speaking
+        self.is_running = False
+        self.visual_state = 'idle'
         self.state_lock = threading.Lock()
         self.state_callbacks = []
+        
+        # Session management
+        self.wake_session_active = False
+        self.session_lock = threading.Lock()
+        
+        # Initialize components
+        logger.info("Initializing Totoro Assistant...")
+        self.initialize_components()
+        
+        # Test startup with George's voice if configured
+        self.george_voice_path = config.GEORGE_VOICE_PATH
+        if self.george_voice_path:
+            logger.info("✨ Using George's cloned voice")
+            self.speak("Hello! Totoro assistant ready with George's cloned voice.")
+        else:
+            self.tts.speak("Hello! Totoro assistant ready with Coqui neural voice synthesis.")
+        
+        self.set_visual_state('idle')
+    
+    def initialize_components(self):
+        """Initialize all assistant components"""
+        logger.info("🎭 Initializing Totoro Assistant...")
         
         # Initialize components
         self.smart_home = SmartHomeManager()
@@ -40,7 +60,6 @@ class TotoroAssistant:
         )
         
         # Check for George's voice configuration
-        self.george_voice_path = None
         if hasattr(config, 'USE_GEORGE_VOICE') and config.USE_GEORGE_VOICE:
             if hasattr(config, 'GEORGE_VOICE_PATH') and os.path.exists(config.GEORGE_VOICE_PATH):
                 self.george_voice_path = config.GEORGE_VOICE_PATH
@@ -48,19 +67,7 @@ class TotoroAssistant:
             else:
                 logger.warning("George voice enabled in config but audio file not found")
         
-        self.is_running = False
         logger.info("✅ Totoro Assistant initialized successfully!")
-        
-        # Test the voice on startup
-        self.set_visual_state('speaking')
-        
-        # Use George's voice for startup if configured
-        if self.george_voice_path:
-            self.speak("Hello! Totoro assistant ready with George's cloned voice.")
-        else:
-            self.tts.speak("Hello! Totoro assistant ready with Coqui neural voice synthesis.")
-        
-        self.set_visual_state('idle')
     
     def set_visual_state(self, state: str):
         """Set the current visual state for the frontend"""
@@ -165,33 +172,49 @@ class TotoroAssistant:
     
     def start_wake_word_session(self):
         """Start a single wake word listening session"""
-        logger.info(f"🎧 Listening for wake word: '{config.WAKE_WORD}'...")
-        self.set_visual_state('idle')
-        
-        if self.voice_recognizer.listen_for_wake_word(timeout=config.RECOGNITION_TIMEOUT):
-            logger.info("Wake word detected!")
-            self.set_visual_state('awake')
-            time.sleep(0.5)
+        # Check if a session is already active
+        with self.session_lock:
+            if self.wake_session_active:
+                logger.warning("Wake word session already active, skipping new session")
+                return "Session already active"
             
-            # Listen for command
-            command = self.voice_recognizer.listen_for_command(timeout=config.COMMAND_TIMEOUT)
-            if command:
-                self.set_visual_state('thinking')
-                response = self.process_command(command)
-                
-                self.set_visual_state('speaking')
-                self.speak(response)
-                self.set_visual_state('idle')
-                return response
-            else:
-                self.set_visual_state('speaking')
-                self.speak("I didn't catch that. Could you try again?")
-                self.set_visual_state('idle')
-                return "No command detected"
-        else:
-            logger.info("No wake word detected within timeout")
+            # Mark session as active
+            self.wake_session_active = True
+        
+        try:
+            logger.info(f"🎧 Listening for wake word: '{config.WAKE_WORD}'...")
             self.set_visual_state('idle')
-            return "No wake word detected"
+            
+            if self.voice_recognizer.listen_for_wake_word(timeout=config.RECOGNITION_TIMEOUT):
+                logger.info("Wake word detected!")
+                self.set_visual_state('awake')
+                time.sleep(0.5)
+                
+                # Listen for command
+                command = self.voice_recognizer.listen_for_command(timeout=config.COMMAND_TIMEOUT)
+                if command:
+                    self.set_visual_state('thinking')
+                    response = self.process_command(command)
+                    
+                    self.set_visual_state('speaking')
+                    self.speak(response)
+                    self.set_visual_state('idle')
+                    return response
+                else:
+                    self.set_visual_state('speaking')
+                    self.speak("I didn't catch that. Could you try again?")
+                    self.set_visual_state('idle')
+                    return "No command detected"
+            else:
+                logger.info("No wake word detected within timeout")
+                self.set_visual_state('idle')
+                return "No wake word detected"
+        
+        finally:
+            # Always release the session lock
+            with self.session_lock:
+                self.wake_session_active = False
+                logger.debug("Wake word session ended")
     
     def test_components(self) -> Dict[str, bool]:
         """Test all components and return status"""
