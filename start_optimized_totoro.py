@@ -76,7 +76,7 @@ def apply_performance_optimizations():
     
     # Set optimized environment variables
     optimizations = {
-        'VOICE_PREFERENCE': 'system',
+        'VOICE_PREFERENCE': 'coqui',
         'OLLAMA_MODEL': 'llama3.2:latest',
         'LLM_BACKEND': 'unified',
         'RECOGNITION_TIMEOUT': '15',
@@ -146,7 +146,7 @@ def show_performance_summary():
     """Show performance improvements summary"""
     print("\n📊 PERFORMANCE OPTIMIZATIONS ACTIVE")
     print("=" * 50)
-    print("✅ System TTS (4.9x faster than neural)")
+    print("✅ Coqui TTS (Neural voice synthesis)")
     print("✅ Smaller LLM model (2GB vs 5GB)")
     print("✅ Reduced timeouts (15s/8s vs 30s/10s)")
     print("✅ Audio conflicts resolved")

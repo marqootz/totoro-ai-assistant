@@ -39,12 +39,27 @@ class TotoroAssistant:
             callback=self.handle_voice_command
         )
         
+        # Check for George's voice configuration
+        self.george_voice_path = None
+        if hasattr(config, 'USE_GEORGE_VOICE') and config.USE_GEORGE_VOICE:
+            if hasattr(config, 'GEORGE_VOICE_PATH') and os.path.exists(config.GEORGE_VOICE_PATH):
+                self.george_voice_path = config.GEORGE_VOICE_PATH
+                logger.info(f"🎭 George's voice enabled: {self.george_voice_path}")
+            else:
+                logger.warning("George voice enabled in config but audio file not found")
+        
         self.is_running = False
         logger.info("✅ Totoro Assistant initialized successfully!")
         
-        # Test the Chatterbox voice on startup
+        # Test the voice on startup
         self.set_visual_state('speaking')
-        self.tts.speak("Hello! Totoro assistant ready with Chatterbox neural voice synthesis.")
+        
+        # Use George's voice for startup if configured
+        if self.george_voice_path:
+            self.speak("Hello! Totoro assistant ready with George's cloned voice.")
+        else:
+            self.tts.speak("Hello! Totoro assistant ready with Coqui neural voice synthesis.")
+        
         self.set_visual_state('idle')
     
     def set_visual_state(self, state: str):
@@ -86,13 +101,13 @@ class TotoroAssistant:
             response = self.process_command(command)
             
             self.set_visual_state('speaking')
-            self.tts.speak(response)
+            self.speak(response)
             
             self.set_visual_state('idle')
         except Exception as e:
             logger.error(f"Error handling voice command: {e}")
             self.set_visual_state('speaking')
-            self.tts.speak("Sorry, I encountered an error processing your command.")
+            self.speak("Sorry, I encountered an error processing your command.")
             self.set_visual_state('idle')
     
     def process_command(self, command: str) -> str:
@@ -143,7 +158,7 @@ class TotoroAssistant:
         self.voice_recognizer.stop_listening_for_commands()
         
         self.set_visual_state('speaking')
-        self.tts.speak("Goodbye!")
+        self.speak("Goodbye!")
         self.set_visual_state('idle')
         
         logger.info("Voice mode stopped")
@@ -165,12 +180,12 @@ class TotoroAssistant:
                 response = self.process_command(command)
                 
                 self.set_visual_state('speaking')
-                self.tts.speak(response)
+                self.speak(response)
                 self.set_visual_state('idle')
                 return response
             else:
                 self.set_visual_state('speaking')
-                self.tts.speak("I didn't catch that. Could you try again?")
+                self.speak("I didn't catch that. Could you try again?")
                 self.set_visual_state('idle')
                 return "No command detected"
         else:
@@ -233,4 +248,11 @@ class TotoroAssistant:
                 "smart_home": self.smart_home is not None,
                 "llm_processor": self.llm_processor is not None,
             }
-        } 
+        }
+    
+    def speak(self, text: str) -> bool:
+        """Speak text using George's voice if configured, otherwise use default TTS"""
+        if self.george_voice_path:
+            return self.tts.speak(text, audio_prompt_path=self.george_voice_path)
+        else:
+            return self.tts.speak(text) 

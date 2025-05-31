@@ -6,29 +6,28 @@ import logging
 from typing import Optional
 import threading
 import time
-import torchaudio as ta
 
 logger = logging.getLogger(__name__)
 
 class TextToSpeech:
-    """Text-to-speech with Chatterbox TTS (Resemble AI) - FIXED to prevent double audio"""
+    """Text-to-speech using only Coqui TTS (XTTS v2) - No Chatterbox dependencies"""
     
-    def __init__(self, voice_preference: str = "chatterbox"):
+    def __init__(self, voice_preference: str = "coqui"):
         self.voice_preference = voice_preference
         self.tts_engine = None
-        self.chatterbox_model = None
+        self.coqui_tts = None
         self._lock = threading.Lock()
         
-        # CRITICAL FIX: Only initialize the audio system once
+        # Initialize audio system once
         self._audio_initialized = False
         self._init_audio_system()
         
         # Initialize TTS engines based on preference
-        if voice_preference == "chatterbox":
-            self._init_chatterbox_tts()
-            # Only fallback if Chatterbox completely fails
-            if not self.chatterbox_model:
-                logger.warning("Chatterbox TTS failed, initializing system TTS fallback")
+        if voice_preference == "coqui":
+            self._init_coqui_tts()
+            # Fallback to system TTS if Coqui fails
+            if not self.coqui_tts:
+                logger.warning("Coqui TTS failed, initializing system TTS fallback")
                 self._init_pyttsx3()
         else:
             # For system preference, only use pyttsx3
@@ -43,58 +42,50 @@ class TextToSpeech:
             pygame.mixer.quit()  # Ensure clean state
             pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=1024)
             self._audio_initialized = True
-            logger.info("✅ Audio mixer initialized (fixed)")
+            logger.info("✅ Audio mixer initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize audio mixer: {e}")
     
-    def _init_chatterbox_tts(self):
-        """Initialize Chatterbox TTS for high-quality neural voices"""
+    def _init_coqui_tts(self):
+        """Initialize Coqui TTS for high-quality neural voices"""
         try:
+            from TTS.api import TTS
             import torch
-            from chatterbox.tts import ChatterboxTTS
             
-            # Check for GPU availability and set device appropriately
-            if torch.cuda.is_available():
-                device = "cuda"
-                logger.info(f"🎮 CUDA available - Loading Chatterbox TTS model on GPU...")
-            else:
-                device = "cpu"
-                logger.info(f"💻 Loading Chatterbox TTS model on CPU...")
-                # Set default tensor type to FloatTensor to avoid CUDA issues
-                torch.set_default_tensor_type(torch.FloatTensor)
+            # Fix PyTorch weights loading issue for newer versions
+            # Set weights_only=False for trusted Coqui models
+            original_load = torch.load
+            def patched_load(*args, **kwargs):
+                kwargs.setdefault('weights_only', False)
+                return original_load(*args, **kwargs)
+            torch.load = patched_load
             
-            # Load the pretrained Chatterbox model with proper device mapping
+            logger.info("🚀 Loading Coqui XTTS v2 model...")
+            self.coqui_tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
+            
+            # Restore original torch.load
+            torch.load = original_load
+            
+            # Check if CUDA is available
             try:
-                self.chatterbox_model = ChatterboxTTS.from_pretrained(device=device)
-            except RuntimeError as e:
-                if "CUDA device" in str(e) and device == "cpu":
-                    # Force CPU loading with map_location
-                    logger.info("🔧 Forcing CPU mapping for CUDA-saved model...")
-                    # Monkey patch torch.load to force CPU mapping
-                    original_load = torch.load
-                    def cpu_load(*args, **kwargs):
-                        kwargs['map_location'] = torch.device('cpu')
-                        return original_load(*args, **kwargs)
-                    torch.load = cpu_load
-                    
-                    try:
-                        self.chatterbox_model = ChatterboxTTS.from_pretrained(device=device)
-                    finally:
-                        # Restore original torch.load
-                        torch.load = original_load
+                if torch.cuda.is_available():
+                    self.coqui_tts = self.coqui_tts.to("cuda")
+                    logger.info("🎮 Coqui TTS loaded on GPU")
                 else:
-                    raise e
+                    logger.info("💻 Coqui TTS loaded on CPU")
+            except:
+                logger.info("💻 Coqui TTS loaded on CPU")
             
-            logger.info("✅ Chatterbox TTS initialized successfully!")
+            logger.info("✅ Coqui TTS initialized successfully!")
             
         except ImportError as e:
-            logger.info(f"Chatterbox TTS library not available: {e}")
-            logger.info("Install with: pip install chatterbox-tts")
-            self.chatterbox_model = None
+            logger.info(f"Coqui TTS library not available: {e}")
+            logger.info("Install with: pip install TTS")
+            self.coqui_tts = None
         except Exception as e:
-            logger.warning(f"Chatterbox TTS initialization failed: {e}")
+            logger.warning(f"Coqui TTS initialization failed: {e}")
             logger.info("Will fall back to system TTS")
-            self.chatterbox_model = None
+            self.coqui_tts = None
     
     def _init_pyttsx3(self):
         """Initialize pyttsx3 as fallback"""
@@ -155,7 +146,7 @@ class TextToSpeech:
             self.tts_engine = None
     
     def speak(self, text: str, audio_prompt_path: Optional[str] = None) -> bool:
-        """Speak text using ONLY ONE TTS engine to prevent double audio
+        """Speak text using Coqui TTS or system TTS fallback
         
         Args:
             text: Text to synthesize
@@ -167,21 +158,21 @@ class TextToSpeech:
         with self._lock:
             logger.info(f"🗣️ Speaking with {self.voice_preference} TTS: {text[:50]}...")
             
-            # CRITICAL FIX: Use ONLY the preferred engine, no fallback unless it completely fails
-            if self.voice_preference == "chatterbox" and self.chatterbox_model:
-                success = self._speak_chatterbox(text, audio_prompt_path)
+            # Use Coqui TTS if available and preferred
+            if self.voice_preference == "coqui" and self.coqui_tts:
+                success = self._speak_coqui(text, audio_prompt_path)
                 if success:
-                    logger.info("✅ Chatterbox TTS completed successfully")
+                    logger.info("✅ Coqui TTS completed successfully")
                     return True
                 else:
-                    logger.error("❌ Chatterbox TTS failed completely")
+                    logger.error("❌ Coqui TTS failed completely")
                     # Only fallback on complete failure
                     if self.tts_engine:
-                        logger.warning("🔄 Falling back to system TTS due to Chatterbox failure")
+                        logger.warning("🔄 Falling back to system TTS due to Coqui failure")
                         return self._speak_pyttsx3(text)
                     return False
             
-            # For system preference or if Chatterbox not available
+            # For system preference or if Coqui not available
             elif self.tts_engine:
                 success = self._speak_pyttsx3(text)
                 if success:
@@ -194,8 +185,8 @@ class TextToSpeech:
                 logger.error("❌ No TTS engine available")
                 return False
     
-    def _speak_chatterbox(self, text: str, audio_prompt_path: Optional[str] = None) -> bool:
-        """Speak using Chatterbox TTS"""
+    def _speak_coqui(self, text: str, audio_prompt_path: Optional[str] = None) -> bool:
+        """Speak using Coqui TTS"""
         try:
             import sys
             import os
@@ -208,32 +199,33 @@ class TextToSpeech:
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
                 temp_path = temp_file.name
             
-            # Generate speech with Chatterbox TTS
-            logger.debug(f"Generating Chatterbox speech...")
+            # Generate speech with Coqui TTS
+            logger.debug(f"Generating Coqui speech...")
             
-            # Generate audio with optional voice cloning and config parameters
-            if audio_prompt_path and os.path.exists(audio_prompt_path):
-                wav = self.chatterbox_model.generate(
-                    text, 
-                    audio_prompt_path=audio_prompt_path,
-                    exaggeration=config.CHATTERBOX_EXAGGERATION,
-                    cfg_weight=config.CHATTERBOX_CFG_WEIGHT
-                )
-                logger.debug(f"Using voice clone from: {audio_prompt_path}")
-            else:
-                wav = self.chatterbox_model.generate(
-                    text,
-                    exaggeration=config.CHATTERBOX_EXAGGERATION,
-                    cfg_weight=config.CHATTERBOX_CFG_WEIGHT
-                )
+            # Get George's voice path from config if no specific path provided
+            if not audio_prompt_path:
+                audio_prompt_path = getattr(config, 'GEORGE_VOICE_PATH', None)
             
-            # Save the generated audio
-            ta.save(temp_path, wav, self.chatterbox_model.sr)
+            # Coqui XTTS requires a speaker voice for cloning
+            if not audio_prompt_path or not os.path.exists(audio_prompt_path):
+                logger.error("Coqui XTTS requires a speaker voice file")
+                return False
             
-            # CRITICAL FIX: Stop any previous audio before playing new
+            # Generate audio with voice cloning
+            self.coqui_tts.tts_to_file(
+                text=text,
+                speaker_wav=audio_prompt_path,
+                language="en",
+                file_path=temp_path,
+                speed=1.0
+            )
+            
+            logger.debug(f"Voice cloning from: {audio_prompt_path}")
+            
+            # Stop any previous audio before playing new
             if pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
-                time.sleep(0.1)  # Brief pause
+                time.sleep(0.1)
             
             # Play the generated audio
             pygame.mixer.music.load(temp_path)
@@ -245,11 +237,11 @@ class TextToSpeech:
             
             # Clean up
             os.unlink(temp_path)
-            logger.debug("Chatterbox speech completed")
+            logger.debug("Coqui speech completed")
             return True
             
         except Exception as e:
-            logger.error(f"Chatterbox TTS error: {e}")
+            logger.error(f"Coqui TTS error: {e}")
             # Clean up temp file if it exists
             try:
                 if 'temp_path' in locals():
@@ -267,7 +259,7 @@ class TextToSpeech:
             
             logger.debug(f"Speaking with system TTS...")
             
-            # CRITICAL FIX: Stop any pygame audio before using pyttsx3
+            # Stop any pygame audio before using pyttsx3
             if pygame.mixer.get_init() and pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
                 time.sleep(0.1)
@@ -281,12 +273,12 @@ class TextToSpeech:
             return False
     
     def set_voice_preference(self, preference: str):
-        """Set voice preference: 'chatterbox' or 'system'"""
+        """Set voice preference: 'coqui' or 'system'"""
         self.voice_preference = preference
         logger.info(f"Voice preference set to: {preference}")
     
     def set_voice_clone(self, audio_prompt_path: str):
-        """Set a voice clone audio file for Chatterbox TTS"""
+        """Set a voice clone audio file for Coqui TTS"""
         if os.path.exists(audio_prompt_path):
             self.voice_clone_path = audio_prompt_path
             logger.info(f"Voice clone set to: {audio_prompt_path}")
@@ -306,23 +298,23 @@ class TextToSpeech:
             logger.error(f"Error listing voices: {e}")
         return []
     
-    def test_speech(self, text: str = "Hello! I'm your Totoro assistant with fixed audio - no more double voice!"):
+    def test_speech(self, text: str = "Hello! I'm your Totoro assistant with Coqui neural voice synthesis."):
         """Test speech output"""
         logger.info("Testing speech output...")
         
-        if self.voice_preference == "chatterbox" and self.chatterbox_model:
-            logger.info("🎤 Testing Chatterbox TTS (fixed)...")
-            success = self._speak_chatterbox(text)
+        if self.coqui_tts:
+            logger.info("🎤 Testing Coqui TTS...")
+            success = self._speak_coqui(text)
             if success:
-                logger.info("✅ Chatterbox TTS working - no double audio!")
+                logger.info("✅ Coqui TTS working!")
                 return True
             else:
-                logger.warning("❌ Chatterbox TTS failed")
+                logger.warning("❌ Coqui TTS failed")
         
-        logger.info("🔄 Testing system TTS...")
+        logger.info("🔄 Testing fallback TTS...")
         success = self._speak_pyttsx3(text)
         if success:
-            logger.info("✅ System TTS working!")
+            logger.info("✅ Fallback TTS working!")
             return True
         else:
             logger.error("❌ All TTS methods failed!")
