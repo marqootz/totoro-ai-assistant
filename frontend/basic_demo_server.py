@@ -88,7 +88,14 @@ class ExpressionAnalyzer:
             'sad': ['disappointed', 'sad', 'unfortunate', 'terrible', 'awful', 'bad', 'wrong', 'failed'],
             'surprised': ['wow', 'incredible', 'unexpected', 'shocking', 'amazing', 'unbelievable'],
             'thinking': ['think', 'consider', 'analyze', 'evaluate', 'hmm', 'maybe', 'perhaps', 'wondering'],
-            'speaking': ['say', 'tell', 'explain', 'describe', 'mentioned', 'stated']
+            'speaking': ['say', 'tell', 'explain', 'describe', 'mentioned', 'stated'],
+            # NEW EMOTIONS FROM FACIAL EXPRESSION STUDY
+            'confused': ['confused', 'puzzled', 'unclear', 'what', 'huh', 'lost', 'bewildered', 'perplexed'],
+            'determined': ['determined', 'focused', 'will', 'must', 'definitely', 'committed', 'resolute', 'driven'],
+            'concerned': ['worried', 'concerned', 'anxious', 'nervous', 'troubled', 'uneasy', 'apprehensive'],
+            'amazed': ['incredible', 'fantastic', 'awesome', 'astonishing', 'remarkable', 'extraordinary', 'mind-blowing'],
+            'skeptical': ['skeptical', 'doubt', 'really', 'sure', 'hmm', 'questionable', 'suspicious', 'dubious'],
+            'ecstatic': ['ecstatic', 'thrilled', 'overjoyed', 'elated', 'euphoric', 'delighted', 'jubilant', 'exhilarated']
         }
     
     def analyze_sentiment(self, text: str) -> Dict:
@@ -136,7 +143,7 @@ class ExpressionAnalyzer:
         """Determine emotion based on text content and polarity"""
         text_lower = text.lower()
         
-        # Check for specific emotion keywords
+        # Check for specific emotion keywords first (more precise)
         emotion_scores = {}
         for emotion, keywords in self.emotion_keywords.items():
             score = sum(1 for keyword in keywords if keyword in text_lower)
@@ -148,15 +155,35 @@ class ExpressionAnalyzer:
             dominant_emotion = max(emotion_scores, key=emotion_scores.get)
             return dominant_emotion
         
-        # Fall back to polarity-based classification
-        if polarity > 0.3:
+        # Enhanced polarity-based classification with intensity levels
+        import random
+        
+        # Very positive emotions
+        if polarity > 0.7:
+            return 'ecstatic'
+        elif polarity > 0.5:
+            return random.choice(['happy', 'amazed'])
+        elif polarity > 0.2:
             return 'happy'
-        elif polarity < -0.3:
+        
+        # Very negative emotions  
+        elif polarity < -0.7:
+            return random.choice(['sad', 'concerned'])
+        elif polarity < -0.5:
             return 'sad'
+        elif polarity < -0.2:
+            return random.choice(['sad', 'concerned'])
+        
+        # Neutral but with some emotional indicators
         elif abs(polarity) > 0.1:
-            return 'surprised'
-        else:
-            return 'neutral'
+            return random.choice(['surprised', 'amazed', 'confused'])
+        
+        # Check for uncertainty markers
+        uncertainty_words = ['maybe', 'perhaps', 'might', 'could', 'unsure']
+        if any(word in text_lower for word in uncertainty_words):
+            return random.choice(['thinking', 'confused'])
+            
+        return 'neutral'
 
 # Initialize expression analyzer
 expression_analyzer = ExpressionAnalyzer()
@@ -180,7 +207,12 @@ def avatar_system():
 
 @app.route('/comparison')
 def eye_comparison():
-    return send_from_directory('.', 'eye-comparison-demo.html')
+    return send_from_directory('.', 'llm-enhanced-avatar.html')
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve static assets like SVG files"""
+    return send_from_directory('../assets', filename)
 
 @app.route('/api/status')
 def get_status():
