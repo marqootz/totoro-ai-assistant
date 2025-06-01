@@ -55,11 +55,17 @@
             display: flex;
             justify-content: center;
             margin-bottom: 40px;
+            width: 100%; /* Full width container */
+            max-width: 800px; /* Match demo container max-width */
         }
 
         #avatarContainer {
             width: 400px;
-            height: 400px;
+            height: 300px;
+            min-width: 400px;  /* Prevent shrinking */
+            max-width: 400px;  /* Prevent growing */
+            min-height: 300px; /* Prevent shrinking */
+            max-height: 300px; /* Prevent growing */
             border-radius: 20px;
             background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
             border: 3px solid #e9ecef;
@@ -72,9 +78,12 @@
                 inset 0 2px 4px rgba(255,255,255,0.8),
                 inset 0 -2px 4px rgba(0,0,0,0.1),
                 0 8px 16px rgba(0,0,0,0.1);
+            flex-shrink: 0; /* Prevent flexbox from shrinking this */
         }
 
         .avatar-face {
+            width: 400px;    /* Fixed width */
+            height: 300px;   /* Fixed height */
             max-width: 100%;
             max-height: 100%;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
@@ -300,6 +309,7 @@
         <div class="status-indicator" id="statusIndicator">
             <div>✅ System Running in High Quality Mode</div>
             <div class="api-status" id="apiStatus">Connecting to server...</div>
+            <div class="api-status" id="audioStatus" style="display: none;">🎤 Real-time Audio Lip Sync Active</div>
         </div>
         
         <div class="quality-indicator">
@@ -311,12 +321,19 @@
         </div>
         
         <div class="controls">
-            <button class="control-button emotion-btn active" onclick="setEmotion('neutral')">😐 Neutral</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('neutral')">😐 Neutral</button>
+            <button class="control-button emotion-btn active" onclick="setEmotion('idle')">😌 Idle</button>
             <button class="control-button emotion-btn" onclick="setEmotion('happy')">😊 Happy</button>
             <button class="control-button emotion-btn" onclick="setEmotion('sad')">😢 Sad</button>
             <button class="control-button emotion-btn" onclick="setEmotion('surprised')">😲 Surprised</button>
             <button class="control-button emotion-btn" onclick="setEmotion('thinking')">🤔 Thinking</button>
             <button class="control-button emotion-btn" onclick="setEmotion('speaking')">🗣️ Speaking</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('confused')">😕 Confused</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('determined')">😤 Determined</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('concerned')">😟 Concerned</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('amazed')">🤩 Amazed</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('skeptical')">🤨 Skeptical</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('ecstatic')">🥳 Ecstatic</button>
         </div>
         
         <div class="settings-section">
@@ -342,6 +359,13 @@
                     <span class="slider"></span>
                 </label>
             </div>
+            <div class="setting-item">
+                <span>🎤 Real-time Audio Lip Sync</span>
+                <label class="toggle">
+                    <input type="checkbox" id="audioLipSyncToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
         
         <div class="text-input-section">
@@ -355,6 +379,12 @@
                 <button class="sample-btn" onclick="analyzePresetText('This is really disappointing and frustrating.')">😢 Sad Sample</button>
                 <button class="sample-btn" onclick="analyzePresetText('Wow, I never expected that to happen!')">😲 Surprised Sample</button>
                 <button class="sample-btn" onclick="analyzePresetText('Let me think about this carefully...')">🤔 Thinking Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('I am confused about what you mean.')">😕 Confused Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('I am determined to make this work!')">😤 Determined Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('I am worried this might not work out.')">😟 Concerned Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('This is absolutely incredible and fantastic!')">🤩 Amazed Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('Hmm, I doubt that is really true.')">🤨 Skeptical Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('This is the most amazing thing ever!')">🥳 Ecstatic Sample</button>
             </div>
         </div>
         
@@ -389,12 +419,12 @@
                 this.container = document.getElementById(containerId);
                 this.options = {
                     enableSentimentAnalysis: true,
-                    animationDuration: 600,
+                    animationDuration: 200,
                     highQuality: true,
                     ...options
                 };
                 
-                this.currentEmotion = 'neutral';
+                this.currentEmotion = 'idle';
                 this.isAnimating = false;
                 
                 this.init();
@@ -409,45 +439,52 @@
             }
 
             createHighQualitySVGStructure() {
-                // Create high-resolution SVG with enhanced styling
+                // Create high-resolution SVG based on original h1ro.svg design
                 this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                this.svg.setAttribute('viewBox', '0 0 400 400');
-                this.svg.setAttribute('width', '100%');
-                this.svg.setAttribute('height', '100%');
+                this.svg.setAttribute('viewBox', '0 0 400 300'); // Adjusted for h1ro proportions
+                this.svg.setAttribute('width', '400');
+                this.svg.setAttribute('height', '300');
+                this.svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                 this.svg.classList.add('avatar-face');
                 this.svg.style.shapeRendering = 'geometricPrecision';
                 this.svg.style.textRendering = 'optimizeLegibility';
+                this.svg.style.overflow = 'visible';
+                this.svg.style.display = 'block';
                 
                 // Create definitions for gradients and filters
                 this.createSVGDefinitions();
                 
                 this.faceGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 this.faceGroup.classList.add('face-group');
+                this.faceGroup.style.transformOrigin = '200px 150px'; // Center of 400x300 viewBox
                 
-                // Head with gradient
-                this.headPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.headPath.setAttribute('fill', 'url(#faceGradient)');
-                this.headPath.setAttribute('stroke', '#34495e');
-                this.headPath.setAttribute('stroke-width', '2');
-                this.headPath.setAttribute('filter', 'url(#dropShadow)');
+                // Head with h1ro styling (oval shape)
+                this.head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.head.setAttribute('fill', '#D9D9D9');
+                this.head.setAttribute('stroke', '#bbb');
+                this.head.setAttribute('stroke-width', '1');
+                this.head.setAttribute('filter', 'url(#headGlow)');
+                this.head.style.transformOrigin = '200px 120px'; // Center of head shape
                 
-                // Eyes with enhanced styling
-                this.leftEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.leftEye.setAttribute('fill', '#2c3e50');
+                // Eyes with h1ro styling (perfect circles)
+                this.leftEye = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                this.leftEye.setAttribute('fill', '#000000');
                 this.leftEye.setAttribute('filter', 'url(#eyeShadow)');
+                this.leftEye.style.transformOrigin = '105px 120px'; // Center of left eye
                 
-                this.rightEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.rightEye.setAttribute('fill', '#2c3e50');
+                this.rightEye = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                this.rightEye.setAttribute('fill', '#000000');
                 this.rightEye.setAttribute('filter', 'url(#eyeShadow)');
+                this.rightEye.style.transformOrigin = '295px 120px'; // Center of right eye
                 
-                // Mouth with enhanced styling
-                this.mouth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.mouth.setAttribute('fill', '#2c3e50');
-                this.mouth.setAttribute('stroke', 'none');
+                // Mouth (replaces bridge) - oval shape like original h1ro
+                this.mouth = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                this.mouth.setAttribute('fill', '#000000');
                 this.mouth.setAttribute('filter', 'url(#mouthGlow)');
+                this.mouth.style.transformOrigin = '200px 180px'; // Center of mouth area
                 
                 // Assemble SVG
-                this.faceGroup.appendChild(this.headPath);
+                this.faceGroup.appendChild(this.head);
                 this.faceGroup.appendChild(this.leftEye);
                 this.faceGroup.appendChild(this.rightEye);
                 this.faceGroup.appendChild(this.mouth);
@@ -535,45 +572,180 @@
             }
 
             setupEnhancedExpressionPaths() {
-                // Enhanced expressions with cubic Bézier curves (Figma-style) for perfect shapes
-                this.expressions = {
+                // H1RO-style avatar expressions with authentic mouth shapes and phonemes
+                // Base expressions that will be varied generatively
+                this.baseExpressions = {
                     neutral: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
-                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
-                        mouth: 'M170,245 Q200,255 230,245 Q200,265 170,245 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 120, r: 16 },
+                        rightEye: { cx: 295, cy: 120, r: 16 },
+                        mouth: { cx: 200, cy: 180, rx: 20, ry: 4 }, // Neutral closed mouth
+                        headRotation: 0
+                    },
+                    idle: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 120, r: 16 },
+                        rightEye: { cx: 295, cy: 120, r: 16 },
+                        mouth: { cx: 200, cy: 180, rx: 18, ry: 3 }, // Slightly relaxed mouth
+                        headRotation: 0
                     },
                     happy: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M190,185 C190,198.8 178.8,210 165,210 C151.2,210 140,198.8 140,185 C140,171.2 151.2,160 165,160 C178.8,160 190,171.2 190,185 Z',
-                        rightEye: 'M274,185 C274,198.8 262.8,210 249,210 C235.2,210 224,198.8 224,185 C224,171.2 235.2,160 249,160 C262.8,160 274,171.2 274,185 Z',
-                        mouth: 'M160,240 Q200,220 240,240 Q200,270 160,240 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 115, r: 12 }, // Squinted with joy
+                        rightEye: { cx: 295, cy: 115, r: 12 },
+                        mouth: { cx: 200, cy: 185, rx: 25, ry: 12 }, // Smiling open mouth
+                        headRotation: 5
                     },
                     sad: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,190 C185,202.7 174.7,213 162,213 C149.3,213 139,202.7 139,190 C139,177.3 149.3,167 162,167 C174.7,167 185,177.3 185,190 Z',
-                        rightEye: 'M269,190 C269,202.7 258.7,213 246,213 C233.3,213 223,202.7 223,190 C223,177.3 233.3,167 246,167 C258.7,167 269,177.3 269,190 Z',
-                        mouth: 'M180,265 Q200,280 220,265 Q200,275 180,265 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 102, cy: 125, r: 18 }, // Droopy, larger
+                        rightEye: { cx: 292, cy: 125, r: 18 },
+                        mouth: { cx: 200, cy: 190, rx: 15, ry: 6 }, // Downturned mouth
+                        headRotation: -8
                     },
                     surprised: {
-                        head: 'M75,115 Q75,75 115,75 L285,75 Q325,75 325,115 L325,285 Q325,325 285,325 L115,325 Q75,325 75,285 Z',
-                        leftEye: 'M200,180 C200,202.1 182.1,220 160,220 C137.9,220 120,202.1 120,180 C120,157.9 137.9,140 160,140 C182.1,140 200,157.9 200,180 Z',
-                        rightEye: 'M284,180 C284,202.1 266.1,220 244,220 C221.9,220 204,202.1 204,180 C204,157.9 221.9,140 244,140 C266.1,140 284,157.9 284,180 Z',
-                        mouth: 'M190,250 Q200,230 210,250 Q200,270 190,250 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 118, r: 22 }, // Wide open
+                        rightEye: { cx: 295, cy: 118, r: 22 },
+                        mouth: { cx: 200, cy: 185, rx: 12, ry: 18 }, // Open "O" shape
+                        headRotation: 2
                     },
                     thinking: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M182,180 C182,192.7 171.7,203 159,203 C146.3,203 136,192.7 136,180 C136,167.3 146.3,157 159,157 C171.7,157 182,167.3 182,180 Z',
-                        rightEye: 'M266,180 C266,192.7 255.7,203 243,203 C230.3,203 220,192.7 220,180 C220,167.3 230.3,157 243,157 C255.7,157 266,167.3 266,180 Z',
-                        mouth: 'M185,250 Q200,245 215,250 Q200,255 185,250 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 122, r: 14 }, // Focused, smaller
+                        rightEye: { cx: 295, cy: 122, r: 14 },
+                        mouth: { cx: 200, cy: 182, rx: 8, ry: 3 }, // Small contemplative mouth
+                        headRotation: -5
                     },
                     speaking: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
-                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
-                        mouth: 'M170,235 Q200,215 230,235 Q200,275 170,235 Z'
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 119, r: 15 }, // Engaged
+                        rightEye: { cx: 295, cy: 119, r: 15 },
+                        mouth: { cx: 200, cy: 184, rx: 18, ry: 10 }, // Active speaking mouth
+                        headRotation: 3
+                    },
+                    confused: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 104, cy: 121, r: 15 }, // Asymmetrical confusion
+                        rightEye: { cx: 296, cy: 119, r: 17 },
+                        mouth: { cx: 200, cy: 183, rx: 6, ry: 8 }, // Small confused "o"
+                        headRotation: -2
+                    },
+                    determined: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 118, r: 13 }, // Narrowed focus
+                        rightEye: { cx: 295, cy: 118, r: 13 },
+                        mouth: { cx: 200, cy: 182, rx: 22, ry: 3 }, // Tight determined line
+                        headRotation: 4
+                    },
+                    concerned: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 103, cy: 123, r: 17 }, // Worried, closer together
+                        rightEye: { cx: 293, cy: 123, r: 17 },
+                        mouth: { cx: 200, cy: 188, rx: 14, ry: 8 }, // Worried frown
+                        headRotation: -6
+                    },
+                    amazed: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 117, r: 24 }, // Very wide, wonder-filled
+                        rightEye: { cx: 295, cy: 117, r: 24 },
+                        mouth: { cx: 200, cy: 185, rx: 15, ry: 20 }, // Large amazed "O"
+                        headRotation: 4
+                    },
+                    skeptical: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 103, cy: 119, r: 14 }, // Asymmetrical doubt
+                        rightEye: { cx: 297, cy: 121, r: 16 },
+                        mouth: { cx: 200, cy: 183, rx: 18, ry: 4 }, // Slight smirk
+                        headRotation: -3
+                    },
+                    ecstatic: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 112, r: 10 }, // Very squinted with extreme joy
+                        rightEye: { cx: 295, cy: 112, r: 10 },
+                        mouth: { cx: 200, cy: 188, rx: 30, ry: 15 }, // Wide ecstatic smile
+                        headRotation: 8
                     }
                 };
+                
+                // Enhanced phoneme mouth shapes for realistic speaking (based on professional systems)
+                this.phonemeMouths = {
+                    // Bilabial sounds - lips together
+                    closed: { cx: 200, cy: 180, rx: 20, ry: 2 }, // m, b, p
+                    
+                    // Fricatives and sibilants  
+                    small_open: { cx: 200, cy: 182, rx: 8, ry: 6 }, // s, c, z, sh, ch, f, v
+                    teeth_lower: { cx: 200, cy: 181, rx: 12, ry: 4 }, // f, v (teeth on lower lip)
+                    
+                    // Mid vowels and consonants
+                    medium_open: { cx: 200, cy: 184, rx: 15, ry: 10 }, // d, t, n, l
+                    
+                    // Open vowels
+                    wide_open: { cx: 200, cy: 186, rx: 18, ry: 14 }, // ah, o, aw
+                    very_wide: { cx: 200, cy: 188, rx: 22, ry: 18 }, // aa (father)
+                    
+                    // Rounded vowels
+                    round_small: { cx: 200, cy: 182, rx: 10, ry: 10 }, // oo (book), u (put)
+                    round_medium: { cx: 200, cy: 184, rx: 14, ry: 14 }, // o (boat), oo (boot)
+                    
+                    // High vowels
+                    tall_narrow: { cx: 200, cy: 183, rx: 8, ry: 16 }, // ee (beat), i (bit)
+                    tall_open: { cx: 200, cy: 185, rx: 12, ry: 20 }, // eh (bet), ae (bat)
+                    
+                    // Consonant clusters
+                    tongue_tip: { cx: 200, cy: 182, rx: 10, ry: 6 }, // th, l, r
+                    tongue_back: { cx: 200, cy: 185, rx: 16, ry: 12 }, // k, g, ng
+                    
+                    // Aspirated and glottal
+                    aspirated: { cx: 200, cy: 184, rx: 14, ry: 8 }, // h, wh
+                    glottal: { cx: 200, cy: 183, rx: 6, ry: 4 }, // glottal stop
+                    
+                    // Diphthongs - transitional shapes
+                    diphthong_start: { cx: 200, cy: 184, rx: 16, ry: 12 }, // ay, oy, ow (start)
+                    diphthong_end: { cx: 200, cy: 182, rx: 10, ry: 8 }, // ay, oy, ow (end)
+                    
+                    // Rest position
+                    rest: { cx: 200, cy: 180, rx: 18, ry: 3 }
+                };
+                
+                // Generate current expressions with variations
+                this.generateExpressionVariations();
+            }
+
+            generateExpressionVariations() {
+                this.expressions = {};
+                
+                Object.keys(this.baseExpressions).forEach(emotion => {
+                    const base = this.baseExpressions[emotion];
+                    
+                    // Add small random variations while preserving emotion
+                    const variation = {
+                        head: base.head,
+                        leftEye: {
+                            cx: base.leftEye.cx + this.randomVariation(2), 
+                            cy: base.leftEye.cy + this.randomVariation(1), 
+                            r: Math.max(5, base.leftEye.r + this.randomVariation(1))
+                        },
+                        rightEye: {
+                            cx: base.rightEye.cx + this.randomVariation(2), 
+                            cy: base.rightEye.cy + this.randomVariation(1), 
+                            r: Math.max(5, base.rightEye.r + this.randomVariation(1))
+                        },
+                        mouth: {
+                            cx: base.mouth.cx + this.randomVariation(1), 
+                            cy: base.mouth.cy + this.randomVariation(0.5), 
+                            rx: Math.max(3, base.mouth.rx + this.randomVariation(0.5)), 
+                            ry: Math.max(1, base.mouth.ry + this.randomVariation(0.5))
+                        },
+                        headRotation: base.headRotation + this.randomVariation(0.5)
+                    };
+                    
+                    this.expressions[emotion] = variation;
+                });
+            }
+
+            randomVariation(maxRange) {
+                return (Math.random() - 0.5) * 2 * maxRange;
             }
 
             initializeAnimationSystem() {
@@ -582,11 +754,18 @@
             }
 
             setInitialPaths() {
-                const neutral = this.expressions.neutral;
-                this.headPath.setAttribute('d', neutral.head);
-                this.leftEye.setAttribute('d', neutral.leftEye);
-                this.rightEye.setAttribute('d', neutral.rightEye);
-                this.mouth.setAttribute('d', neutral.mouth);
+                const idle = this.expressions.idle;
+                this.head.setAttribute('d', idle.head);
+                this.leftEye.setAttribute('cx', idle.leftEye.cx);
+                this.leftEye.setAttribute('cy', idle.leftEye.cy);
+                this.leftEye.setAttribute('r', idle.leftEye.r);
+                this.rightEye.setAttribute('cx', idle.rightEye.cx);
+                this.rightEye.setAttribute('cy', idle.rightEye.cy);
+                this.rightEye.setAttribute('r', idle.rightEye.r);
+                this.mouth.setAttribute('cx', idle.mouth.cx);
+                this.mouth.setAttribute('cy', idle.mouth.cy);
+                this.mouth.setAttribute('rx', idle.mouth.rx);
+                this.mouth.setAttribute('ry', idle.mouth.ry);
             }
 
             setupMorphingAnimations() {
@@ -596,7 +775,8 @@
                     this.morphFunctions[emotion] = {};
                     const paths = this.expressions[emotion];
                     
-                    ['head', 'leftEye', 'rightEye', 'mouth'].forEach(element => {
+                    // Only setup morphing for head (path) - eyes and mouth use GSAP attribute animation
+                    ['head'].forEach(element => {
                         this.morphFunctions[emotion][element] = {};
                         
                         Object.keys(this.expressions).forEach(targetEmotion => {
@@ -625,10 +805,17 @@
                 if (!this.expressions[emotion]) return;
                 
                 const paths = this.expressions[emotion];
-                this.headPath.setAttribute('d', paths.head);
-                this.leftEye.setAttribute('d', paths.leftEye);
-                this.rightEye.setAttribute('d', paths.rightEye);
-                this.mouth.setAttribute('d', paths.mouth);
+                this.head.setAttribute('d', paths.head);
+                this.leftEye.setAttribute('cx', paths.leftEye.cx);
+                this.leftEye.setAttribute('cy', paths.leftEye.cy);
+                this.leftEye.setAttribute('r', paths.leftEye.r);
+                this.rightEye.setAttribute('cx', paths.rightEye.cx);
+                this.rightEye.setAttribute('cy', paths.rightEye.cy);
+                this.rightEye.setAttribute('r', paths.rightEye.r);
+                this.mouth.setAttribute('cx', paths.mouth.cx);
+                this.mouth.setAttribute('cy', paths.mouth.cy);
+                this.mouth.setAttribute('rx', paths.mouth.rx);
+                this.mouth.setAttribute('ry', paths.mouth.ry);
                 
                 this.currentEmotion = emotion;
             }
@@ -639,13 +826,8 @@
                 this.isAnimating = true;
                 const duration = this.options.animationDuration;
                 
-                const elements = ['head', 'leftEye', 'rightEye', 'mouth'];
-                const elementMappings = {
-                    head: this.headPath,
-                    leftEye: this.leftEye,
-                    rightEye: this.rightEye,
-                    mouth: this.mouth
-                };
+                // Regenerate expressions with slight variations each time
+                this.generateExpressionVariations();
                 
                 const timeline = gsap.timeline({
                     onComplete: () => {
@@ -654,22 +836,80 @@
                     }
                 });
                 
-                elements.forEach((element, index) => {
-                    const domElement = elementMappings[element];
-                    const morphFunction = this.morphFunctions[this.currentEmotion]?.[element]?.[emotion];
+                // Get target expression
+                const targetExpression = this.expressions[emotion];
+                
+                // Animate head rotation
+                timeline.to(this.head, {
+                    duration: duration / 1000 * 2,
+                    rotation: targetExpression.headRotation,
+                    ease: "cubic-bezier(0, 0, 0.58, 1)",
+                    transformOrigin: "center center"
+                }, 0);
+                
+                // Animate head morphing
+                const headMorphFunction = this.morphFunctions[this.currentEmotion]?.head?.[emotion];
+                if (headMorphFunction) {
+                    timeline.to({}, {
+                        duration: duration / 1000 * 2,
+                        ease: "cubic-bezier(0, 0, 0.58, 1)",
+                        onUpdate: function() {
+                            const progress = this.progress();
+                            const newPath = headMorphFunction(progress);
+                            this.targets()[0].head.setAttribute('d', newPath);
+                        }.bind({head: this.head})
+                    }, 0);
+                }
+                
+                // Animate left eye
+                timeline.to(this.leftEye, {
+                    duration: duration / 1000 * 2,
+                    attr: {
+                        cx: targetExpression.leftEye.cx,
+                        cy: targetExpression.leftEye.cy,
+                        r: targetExpression.leftEye.r
+                    },
+                    ease: "cubic-bezier(0, 0, 0.58, 1)"
+                }, 0);
+                
+                // Animate right eye
+                timeline.to(this.rightEye, {
+                    duration: duration / 1000 * 2,
+                    attr: {
+                        cx: targetExpression.rightEye.cx,
+                        cy: targetExpression.rightEye.cy,
+                        r: targetExpression.rightEye.r
+                    },
+                    ease: "cubic-bezier(0, 0, 0.58, 1)"
+                }, 0);
+                
+                // Animate mouth
+                timeline.to(this.mouth, {
+                    duration: duration / 1000 * 2,
+                    attr: {
+                        cx: targetExpression.mouth.cx,
+                        cy: targetExpression.mouth.cy,
+                        rx: targetExpression.mouth.rx,
+                        ry: targetExpression.mouth.ry
+                    },
+                    ease: "cubic-bezier(0, 0, 0.58, 1)"
+                }, 0);
+                
+                // Add subtle scaling animation for eyes and mouth
+                [this.leftEye, this.rightEye, this.mouth].forEach((element, index) => {
+                    timeline.to(element, {
+                        duration: duration / 1000,
+                        scale: 1.05,
+                        ease: "cubic-bezier(0, 0, 0.58, 1)",
+                        transformOrigin: "center center"
+                    }, index * 0.005);
                     
-                    if (morphFunction) {
-                        timeline.to({}, {
-                            duration: duration / 1000,
-                            ease: "power2.inOut",
-                            onUpdate: function() {
-                                const progress = this.progress();
-                                const newPath = morphFunction(progress);
-                                domElement.setAttribute('d', newPath);
-                            },
-                            delay: index * 0.03
-                        }, 0);
-                    }
+                    timeline.to(element, {
+                        duration: duration / 1000,
+                        scale: 1.0,
+                        ease: "cubic-bezier(0, 0, 0.58, 1)",
+                        transformOrigin: "center center"
+                    }, duration / 1000 + index * 0.005);
                 });
             }
 
@@ -692,13 +932,46 @@
             determineEmotion(sentimentResult) {
                 const score = sentimentResult.score;
                 const comparative = sentimentResult.comparative;
+                const tokens = sentimentResult.tokens.map(t => t.toLowerCase());
                 
-                if (score > 2) return 'happy';
-                if (score < -2) return 'sad';
-                if (Math.abs(comparative) > 0.3) return 'surprised';
-                if (sentimentResult.tokens.some(token => 
-                    ['think', 'consider', 'maybe', 'perhaps', 'wondering', 'hmm'].includes(token.toLowerCase())
-                )) return 'thinking';
+                // Check for specific emotional keywords first
+                if (tokens.some(token => ['amazing', 'incredible', 'fantastic', 'awesome'].includes(token))) {
+                    return Math.random() > 0.5 ? 'amazed' : 'ecstatic';
+                }
+                
+                if (tokens.some(token => ['confused', 'puzzled', 'unclear', 'what', 'huh'].includes(token))) {
+                    return 'confused';
+                }
+                
+                if (tokens.some(token => ['determined', 'focused', 'will', 'must', 'definitely'].includes(token))) {
+                    return 'determined';
+                }
+                
+                if (tokens.some(token => ['worried', 'concerned', 'anxious', 'nervous'].includes(token))) {
+                    return 'concerned';
+                }
+                
+                if (tokens.some(token => ['skeptical', 'doubt', 'really', 'sure', 'hmm'].includes(token))) {
+                    return 'skeptical';
+                }
+                
+                // Enhanced sentiment-based emotion detection
+                if (score > 5) return 'ecstatic';
+                if (score > 3) return 'happy';
+                if (score > 1) return Math.random() > 0.5 ? 'happy' : 'amazed';
+                
+                if (score < -5) return Math.random() > 0.5 ? 'sad' : 'concerned';
+                if (score < -3) return 'sad';
+                if (score < -1) return Math.random() > 0.5 ? 'sad' : 'concerned';
+                
+                if (Math.abs(comparative) > 0.5) return 'surprised';
+                if (Math.abs(comparative) > 0.3) return Math.random() > 0.5 ? 'surprised' : 'amazed';
+                
+                if (tokens.some(token => 
+                    ['think', 'consider', 'maybe', 'perhaps', 'wondering', 'hmm'].includes(token)
+                )) {
+                    return Math.random() > 0.5 ? 'thinking' : 'confused';
+                }
                 
                 return 'neutral';
             }
@@ -752,26 +1025,404 @@
                     quality: this.options.highQuality ? 'High' : 'Standard'
                 };
             }
+
+            // Add phoneme animation for realistic speaking
+            animatePhonemes(text) {
+                if (!text) return;
+                
+                // Simple phoneme mapping based on text
+                const phonemes = this.textToPhonemes(text);
+                const timeline = gsap.timeline();
+                
+                phonemes.forEach((phoneme, index) => {
+                    const mouthShape = this.phonemeMouths[phoneme] || this.phonemeMouths.medium_open;
+                    
+                    timeline.to(this.mouth, {
+                        duration: 0.15,
+                        attr: {
+                            cx: mouthShape.cx,
+                            cy: mouthShape.cy,
+                            rx: mouthShape.rx,
+                            ry: mouthShape.ry
+                        },
+                        ease: "power2.out"
+                    }, index * 0.1);
+                });
+                
+                // Return to speaking mouth shape
+                timeline.to(this.mouth, {
+                    duration: 0.2,
+                    attr: {
+                        cx: this.expressions.speaking.mouth.cx,
+                        cy: this.expressions.speaking.mouth.cy,
+                        rx: this.expressions.speaking.mouth.rx,
+                        ry: this.expressions.speaking.mouth.ry
+                    },
+                    ease: "power2.out"
+                });
+            }
+            
+            textToPhonemes(text) {
+                // Enhanced phoneme mapping with co-articulation consideration
+                const phonemeMap = {
+                    // Bilabials
+                    'b': 'closed', 'm': 'closed', 'p': 'closed',
+                    
+                    // Fricatives and Sibilants  
+                    's': 'small_open', 'z': 'small_open', 'sh': 'small_open', 
+                    'ch': 'small_open', 'j': 'small_open',
+                    'f': 'teeth_lower', 'v': 'teeth_lower',
+                    
+                    // Alveolars
+                    'd': 'medium_open', 't': 'medium_open', 'n': 'medium_open',
+                    
+                    // Liquids
+                    'l': 'tongue_tip', 'r': 'tongue_tip',
+                    
+                    // Fricatives
+                    'th': 'tongue_tip', // both voiced and unvoiced
+                    
+                    // Velars
+                    'k': 'tongue_back', 'g': 'tongue_back', 'ng': 'tongue_back',
+                    
+                    // Glottals and Aspirated
+                    'h': 'aspirated', 'wh': 'aspirated',
+                    
+                    // Vowels - High
+                    'i': 'tall_narrow', 'ee': 'tall_narrow', 
+                    'ih': 'tall_open', 'eh': 'tall_open',
+                    
+                    // Vowels - Mid
+                    'e': 'medium_open', 'uh': 'medium_open',
+                    'er': 'medium_open', 'ur': 'medium_open',
+                    
+                    // Vowels - Low  
+                    'a': 'wide_open', 'ah': 'wide_open', 'o': 'wide_open',
+                    'aa': 'very_wide', 'aw': 'very_wide',
+                    
+                    // Rounded vowels
+                    'u': 'round_small', 'oo': 'round_medium', 
+                    'w': 'round_medium',
+                    
+                    // Diphthongs
+                    'ay': 'diphthong_start', 'oy': 'diphthong_start', 
+                    'ow': 'diphthong_start', 'ey': 'diphthong_start'
+                };
+                
+                // Simple word-to-phoneme mapping for common words
+                const wordPhonemes = {
+                    'the': ['th', 'uh'],
+                    'and': ['ah', 'n', 'd'],
+                    'hello': ['h', 'eh', 'l', 'ow'],
+                    'world': ['w', 'er', 'l', 'd'],
+                    'how': ['h', 'ow'],
+                    'are': ['ah', 'r'],
+                    'you': ['y', 'oo'],
+                    'what': ['wh', 'ah', 't'],
+                    'when': ['wh', 'eh', 'n'],
+                    'where': ['wh', 'eh', 'r'],
+                    'this': ['th', 'ih', 's'],
+                    'that': ['th', 'ah', 't'],
+                    'with': ['w', 'ih', 'th'],
+                    'will': ['w', 'ih', 'l'],
+                    'can': ['k', 'ah', 'n'],
+                    'could': ['k', 'oo', 'd'],
+                    'should': ['sh', 'oo', 'd'],
+                    'would': ['w', 'oo', 'd']
+                };
+                
+                const phonemes = [];
+                const words = text.toLowerCase().split(/\s+/);
+                
+                for (let word of words) {
+                    // Clean word of punctuation
+                    const cleanWord = word.replace(/[^\w]/g, '');
+                    
+                    if (wordPhonemes[cleanWord]) {
+                        // Use pre-mapped phonemes for known words
+                        phonemes.push(...wordPhonemes[cleanWord]);
+                    } else {
+                        // Fall back to character-based mapping
+                        for (let char of cleanWord) {
+                            phonemes.push(phonemeMap[char] || 'medium_open');
+                        }
+                    }
+                    
+                    // Add brief pause between words
+                    if (words.indexOf(word) < words.length - 1) {
+                        phonemes.push('rest');
+                    }
+                }
+                
+                return phonemes;
+            }
         }
 
         // Global variables
         let expressionSystem;
         let performanceInterval;
+        let audioProcessor; // New audio processing system
+        
+        // Audio processing class for real-time lip sync
+        class RealTimeAudioProcessor {
+            constructor() {
+                this.audioContext = null;
+                this.analyser = null;
+                this.microphone = null;
+                this.isListening = false;
+                this.dataArray = null;
+                this.bufferLength = 0;
+                this.lastPhoneme = 'rest';
+                this.phonemeThresholds = this.setupPhonemeThresholds();
+                this.smoothingFactor = 0.8; // For performance, less smoothing
+                this.detectedPhonemes = new Set(); // Track unique phonemes detected
+            }
+            
+            setupPhonemeThresholds() {
+                // Frequency-based phoneme detection (fast, no ML needed)
+                return {
+                    // High frequency energy (2000-8000 Hz) - sibilants
+                    sibilant: { minFreq: 2000, maxFreq: 8000, threshold: 0.3 },
+                    // Mid frequency energy (500-2000 Hz) - vowels  
+                    vowel: { minFreq: 500, maxFreq: 2000, threshold: 0.4 },
+                    // Low frequency energy (80-500 Hz) - voiced sounds
+                    voiced: { minFreq: 80, maxFreq: 500, threshold: 0.5 },
+                    // Very low energy - closed sounds
+                    closed: { minFreq: 0, maxFreq: 300, threshold: 0.2 }
+                };
+            }
+            
+            async startListening() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Request microphone access
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { 
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 16000 // Lower sample rate for performance
+                        } 
+                    });
+                    
+                    this.microphone = this.audioContext.createMediaStreamSource(stream);
+                    this.analyser = this.audioContext.createAnalyser();
+                    
+                    // Optimize for performance
+                    this.analyser.fftSize = 512; // Smaller FFT for speed
+                    this.analyser.smoothingTimeConstant = this.smoothingFactor;
+                    
+                    this.bufferLength = this.analyser.frequencyBinCount;
+                    this.dataArray = new Uint8Array(this.bufferLength);
+                    
+                    this.microphone.connect(this.analyser);
+                    this.isListening = true;
+                    
+                    this.processAudio();
+                    console.log('Real-time audio processing started');
+                    
+                } catch (error) {
+                    console.error('Error starting audio:', error);
+                }
+            }
+            
+            processAudio() {
+                if (!this.isListening) return;
+                
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                // Fast phoneme detection based on frequency analysis
+                const phoneme = this.detectPhoneme(this.dataArray);
+                
+                if (phoneme !== this.lastPhoneme) {
+                    this.updateMouthShape(phoneme);
+                    this.lastPhoneme = phoneme;
+                }
+                
+                // High frequency processing for real-time feel
+                requestAnimationFrame(() => this.processAudio());
+            }
+            
+            detectPhoneme(frequencyData) {
+                // Enhanced frequency analysis with more bands for better phoneme detection
+                const sampleRate = this.audioContext.sampleRate;
+                const binSize = sampleRate / this.analyser.fftSize;
+                
+                // More sophisticated frequency band analysis
+                let veryHighEnergy = 0;    // 4000-8000 Hz - sibilants (s, sh, ch)
+                let highEnergy = 0;        // 2000-4000 Hz - fricatives (f, v, th)
+                let midHighEnergy = 0;     // 1000-2000 Hz - high vowels (ee, i)
+                let midEnergy = 0;         // 500-1000 Hz - mid vowels (eh, e)
+                let lowMidEnergy = 0;      // 250-500 Hz - low vowels (ah, o)
+                let lowEnergy = 0;         // 80-250 Hz - voiced consonants
+                let totalEnergy = 0;
+                
+                for (let i = 0; i < frequencyData.length; i++) {
+                    const frequency = i * binSize;
+                    const amplitude = frequencyData[i] / 255.0;
+                    
+                    totalEnergy += amplitude;
+                    
+                    if (frequency >= 4000 && frequency <= 8000) {
+                        veryHighEnergy += amplitude;
+                    } else if (frequency >= 2000 && frequency <= 4000) {
+                        highEnergy += amplitude;
+                    } else if (frequency >= 1000 && frequency <= 2000) {
+                        midHighEnergy += amplitude;
+                    } else if (frequency >= 500 && frequency <= 1000) {
+                        midEnergy += amplitude;
+                    } else if (frequency >= 250 && frequency <= 500) {
+                        lowMidEnergy += amplitude;
+                    } else if (frequency >= 80 && frequency <= 250) {
+                        lowEnergy += amplitude;
+                    }
+                }
+                
+                // Normalize energies
+                const numBins = frequencyData.length;
+                veryHighEnergy /= numBins;
+                highEnergy /= numBins;
+                midHighEnergy /= numBins;
+                midEnergy /= numBins;
+                lowMidEnergy /= numBins;
+                lowEnergy /= numBins;
+                totalEnergy /= numBins;
+                
+                // Add temporal variation to encourage different phonemes
+                const timeVariation = (Date.now() % 1000) / 1000; // 0-1 based on time
+                const randomFactor = Math.random() * 0.1; // Small random factor
+                
+                // Debug logging (remove in production)
+                if (Math.random() < 0.005) { // Log 0.5% of the time to avoid spam
+                    console.log(`Energy - Total: ${totalEnergy.toFixed(3)}, VeryHigh: ${veryHighEnergy.toFixed(3)}, High: ${highEnergy.toFixed(3)}, MidHigh: ${midHighEnergy.toFixed(3)}, Mid: ${midEnergy.toFixed(3)}, LowMid: ${lowMidEnergy.toFixed(3)}, Low: ${lowEnergy.toFixed(3)}`);
+                }
+                
+                // MUCH MORE AGGRESSIVE detection - Force variety
+                if (totalEnergy < 0.03) { // Very low threshold for rest
+                    return 'rest';
+                }
+                
+                // Force different phonemes based on subtle energy differences
+                if (totalEnergy > 0.03) {
+                    
+                    // Sibilants and fricatives - VERY SENSITIVE
+                    if (veryHighEnergy > 0.05 + randomFactor) { // Very low threshold
+                        const sibilantOptions = ['small_open', 'teeth_lower'];
+                        return sibilantOptions[Math.floor((veryHighEnergy * 10 + timeVariation) % 2)];
+                    }
+                    
+                    if (highEnergy > 0.04 + randomFactor) {
+                        const fricativeOptions = ['teeth_lower', 'tongue_tip', 'small_open'];
+                        return fricativeOptions[Math.floor((highEnergy * 15 + timeVariation) % 3)];
+                    }
+                    
+                    // Vowels - MUCH MORE VARIETY
+                    if (midHighEnergy > 0.06 + randomFactor) {
+                        const highVowelOptions = ['tall_narrow', 'tall_open', 'medium_open'];
+                        return highVowelOptions[Math.floor((midHighEnergy * 20 + timeVariation) % 3)];
+                    }
+                    
+                    if (midEnergy > 0.08 + randomFactor) {
+                        const midVowelOptions = ['medium_open', 'wide_open', 'round_medium'];
+                        return midVowelOptions[Math.floor((midEnergy * 18 + timeVariation) % 3)];
+                    }
+                    
+                    if (lowMidEnergy > 0.06 + randomFactor) {
+                        const lowVowelOptions = ['wide_open', 'very_wide', 'round_medium', 'round_small'];
+                        return lowVowelOptions[Math.floor((lowMidEnergy * 25 + timeVariation) % 4)];
+                    }
+                    
+                    // Consonants - MORE VARIETY
+                    if (lowEnergy > 0.05 + randomFactor) {
+                        const consonantOptions = ['closed', 'medium_open', 'tongue_back', 'tongue_tip'];
+                        return consonantOptions[Math.floor((lowEnergy * 30 + timeVariation) % 4)];
+                    }
+                    
+                    // Diphthongs and transitions - FORCE MORE VARIETY
+                    if (totalEnergy > 0.12) {
+                        const diphthongOptions = ['diphthong_start', 'diphthong_end', 'round_medium', 'very_wide'];
+                        return diphthongOptions[Math.floor((totalEnergy * 12 + timeVariation) % 4)];
+                    }
+                    
+                    // Special sounds based on energy distribution
+                    if (totalEnergy > 0.08) {
+                        const specialOptions = ['aspirated', 'glottal', 'round_small', 'tongue_back'];
+                        return specialOptions[Math.floor((totalEnergy * 8 + timeVariation * 2) % 4)];
+                    }
+                    
+                    // Catch-all with rotation to ensure variety
+                    const allPhonemes = [
+                        'closed', 'small_open', 'teeth_lower', 'medium_open', 'wide_open', 'very_wide',
+                        'round_small', 'round_medium', 'tall_narrow', 'tall_open', 'tongue_tip', 
+                        'tongue_back', 'aspirated', 'glottal', 'diphthong_start', 'diphthong_end'
+                    ];
+                    
+                    // Use energy + time to cycle through phonemes
+                    const index = Math.floor((totalEnergy * 100 + timeVariation * 16) % allPhonemes.length);
+                    return allPhonemes[index];
+                }
+                
+                // Absolute fallback
+                return 'medium_open';
+            }
+            
+            updateMouthShape(phoneme) {
+                if (expressionSystem && expressionSystem.phonemeMouths[phoneme]) {
+                    const mouthShape = expressionSystem.phonemeMouths[phoneme];
+                    
+                    // Track detected phonemes
+                    this.detectedPhonemes.add(phoneme);
+                    
+                    // Enhanced debug display with more info
+                    const audioStatus = document.getElementById('audioStatus');
+                    if (audioStatus && audioStatus.style.display !== 'none') {
+                        const phonemeList = Array.from(this.detectedPhonemes).join(', ');
+                        audioStatus.textContent = `🎤 Audio Lip Sync Active - Current: ${phoneme} | Detected: (${this.detectedPhonemes.size}/16) ${phonemeList}`;
+                    }
+                    
+                    // Fast mouth animation - no complex timeline
+                    gsap.to(expressionSystem.mouth, {
+                        duration: 0.1, // Very fast for real-time feel
+                        attr: {
+                            cx: mouthShape.cx,
+                            cy: mouthShape.cy,
+                            rx: mouthShape.rx,
+                            ry: mouthShape.ry
+                        },
+                        ease: "none" // No easing for maximum speed
+                    });
+                }
+            }
+            
+            stopListening() {
+                this.isListening = false;
+                if (this.microphone) {
+                    this.microphone.disconnect();
+                }
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                console.log('Audio processing stopped');
+            }
+        }
         
         // Initialize the expression system
         document.addEventListener('DOMContentLoaded', function() {
             expressionSystem = new HighQualityExpressionSystem('avatarContainer', {
                 enableSentimentAnalysis: true,
-                animationDuration: 600,
+                animationDuration: 200,
                 highQuality: true
             });
             
+            // Initialize audio processor
+            audioProcessor = new RealTimeAudioProcessor();
+            
             setupEventListeners();
             
-            // Start with a quick demo
+            // Set to idle state instead of cycling demo
             setTimeout(() => {
-                demoExpressions();
-            }, 1000);
+                expressionSystem.setExpression('idle');
+            }, 500);
         });
         
         function setupEventListeners() {
@@ -797,6 +1448,34 @@
                 // Could implement dynamic quality switching here
             });
             
+            // Real-time audio lip sync toggle
+            document.getElementById('audioLipSyncToggle').addEventListener('change', async function() {
+                const audioStatus = document.getElementById('audioStatus');
+                
+                if (this.checked) {
+                    try {
+                        await audioProcessor.startListening();
+                        console.log('Real-time lip sync enabled');
+                        // Set to speaking mode when audio is active
+                        expressionSystem.setExpression('speaking');
+                        // Show audio status
+                        audioStatus.style.display = 'block';
+                    } catch (error) {
+                        console.error('Failed to start audio:', error);
+                        this.checked = false;
+                        alert('Microphone access denied or not available');
+                        audioStatus.style.display = 'none';
+                    }
+                } else {
+                    audioProcessor.stopListening();
+                    console.log('Real-time lip sync disabled');
+                    // Return to neutral when audio stops
+                    expressionSystem.setExpression('neutral');
+                    // Hide audio status
+                    audioStatus.style.display = 'none';
+                }
+            });
+            
             document.getElementById('textInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     analyzeText();
@@ -818,6 +1497,14 @@
             if (text) {
                 const result = expressionSystem.analyzeSentiment(text);
                 console.log('Sentiment analysis:', result);
+                
+                // Trigger phoneme animation if speaking-related
+                if (result && (result.emotion === 'speaking' || text.length > 20)) {
+                    setTimeout(() => {
+                        expressionSystem.animatePhonemes(text);
+                    }, 300);
+                }
+                
                 document.getElementById('textInput').value = '';
             }
         }
@@ -838,6 +1525,13 @@
                 console.log('Server sentiment analysis:', data);
                 if (data.emotion && data.confidence > 0.3) {
                     expressionSystem.setExpression(data.emotion);
+                    
+                    // Trigger phoneme animation if speaking-related
+                    if (data.emotion === 'speaking' || text.length > 20) {
+                        setTimeout(() => {
+                            expressionSystem.animatePhonemes(text);
+                        }, 300);
+                    }
                 }
                 document.getElementById('textInput').value = '';
             })
@@ -875,7 +1569,7 @@
         }
 
         function demoExpressions() {
-            const emotions = ['happy', 'surprised', 'thinking', 'neutral'];
+            const emotions = ['happy', 'amazed', 'confused', 'determined', 'surprised', 'ecstatic', 'thinking', 'neutral'];
             let index = 0;
             
             const cycle = () => {
@@ -898,6 +1592,12 @@
                     case '4': setEmotion('surprised'); break;
                     case '5': setEmotion('thinking'); break;
                     case '6': setEmotion('speaking'); break;
+                    case '7': setEmotion('confused'); break;
+                    case '8': setEmotion('determined'); break;
+                    case '9': setEmotion('concerned'); break;
+                    case '0': setEmotion('amazed'); break;
+                    case 'q': setEmotion('skeptical'); break;
+                    case 'w': setEmotion('ecstatic'); break;
                 }
             }
         });
