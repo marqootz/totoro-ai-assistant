@@ -18,7 +18,7 @@ COQUI_SPEED = 1.0  # Speech speed multiplier (0.5-2.0)
 
 # George's Voice Clone Settings
 GEORGE_VOICE_PATH = "assets/george-source-voice.mp3"
-USE_GEORGE_VOICE = True  # Set to False to disable George's voice
+USE_GEORGE_VOICE = False  # Set to False to disable George's voice
 
 # System Voice Settings (fallback when VOICE_PREFERENCE = "system")
 SYSTEM_VOICE_ID = "com.apple.eloquence.en-GB.Grandma"

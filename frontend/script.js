@@ -116,24 +116,13 @@ function setState(state) {
 // Voice control functions
 async function startVoice() {
     try {
-        // Use the command endpoint instead of start_voice
-        const response = await fetch('/api/command/start_listening');
+        // Use the voice API endpoint
+        const response = await fetch('/api/voice/start');
         const data = await response.json();
         
         if (data.success) {
-            console.log('Voice command sent:', data.response);
-            alert('✅ Voice activation attempted! Try saying your wake word now.\n\nResponse: ' + data.response);
-            
-            // Also try to start the main assistant loop
-            try {
-                const loopResponse = await fetch('/api/command/run_continuous');
-                if (loopResponse.ok) {
-                    const loopData = await loopResponse.json();
-                    console.log('Continuous mode:', loopData);
-                }
-            } catch (e) {
-                console.log('Continuous mode not available');
-            }
+            console.log('Voice listening started:', data.message);
+            alert(`✅ Voice listening started!\n\nWake word: "${data.wake_word}"\n\nSay "${data.wake_word}" to activate the assistant.`);
         } else {
             console.error('Failed to start voice:', data.error);
             alert('❌ Failed to start voice: ' + data.error);
@@ -146,22 +135,153 @@ async function startVoice() {
 
 async function stopVoice() {
     try {
-        // Use the command endpoint instead of stop_voice
-        const response = await fetch('/api/command/stop_listening');
+        // Use the voice API endpoint
+        const response = await fetch('/api/voice/stop');
         const data = await response.json();
         
         if (data.success) {
-            console.log('Voice stopped:', data.response);
-            alert('🔇 Voice stopping attempted.\n\nResponse: ' + data.response);
+            console.log('Voice listening stopped:', data.message);
+            alert('🔇 Voice listening stopped.');
         } else {
-            console.error('Failed to stop voice:', data.response);
-            alert('❌ Response: ' + data.response);
+            console.error('Failed to stop voice:', data.error);
+            alert('❌ Failed to stop voice: ' + data.error);
         }
     } catch (error) {
         console.error('Error stopping voice:', error);
         alert('❌ Error stopping voice: ' + error.message);
     }
 }
+
+// New function for single wake word session
+async function startWakeSession() {
+    try {
+        const response = await fetch('/api/voice/wake_session');
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('Wake session started:', data.message);
+            
+            // Show listening status in UI
+            const statusText = document.getElementById('statusText');
+            const originalText = statusText.textContent;
+            
+            statusText.textContent = `👂 Listening for "totoro"... (${data.timeout}s timeout)`;
+            
+            // Update Totoro face to show listening state
+            setState('idle');
+            
+            // Start a timer to show countdown
+            let timeLeft = data.timeout;
+            const countdown = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    statusText.textContent = `👂 Listening for "totoro"... (${timeLeft}s left)`;
+                } else {
+                    statusText.textContent = originalText;
+                    clearInterval(countdown);
+                }
+            }, 1000);
+            
+            // Clear countdown after timeout
+            setTimeout(() => {
+                clearInterval(countdown);
+                statusText.textContent = originalText;
+            }, data.timeout * 1000 + 1000);
+            
+            alert(`👂 LISTENING FOR WAKE WORD!\n\n🎯 Say "totoro" clearly now\n⏱️ Timeout: ${data.timeout} seconds\n\n💡 Tip: Speak clearly and wait for response`);
+        } else {
+            console.error('Failed to start wake session:', data.error);
+            alert('❌ Failed to start wake session: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error starting wake session:', error);
+        alert('❌ Error starting wake session: ' + error.message);
+    }
+}
+
+// Check voice system status
+async function checkVoiceStatus() {
+    try {
+        const response = await fetch('/api/voice/status');
+        const data = await response.json();
+        
+        if (data.success) {
+            const status = `Voice System Status:
+• Running: ${data.is_running ? 'Yes' : 'No'}
+• Wake word: "${data.wake_word}"
+• Voice preference: ${data.voice_preference}
+• Microphone: ${data.microphone_available ? 'Available' : 'Not available'}`;
+            
+            alert(status);
+        } else {
+            alert('❌ Failed to get voice status: ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Error checking voice status: ' + error.message);
+    }
+}
+
+// Monitor assistant state more frequently during active sessions
+function startStateMonitoring() {
+    let monitoringActive = false;
+    
+    return {
+        start: function() {
+            if (monitoringActive) return;
+            monitoringActive = true;
+            
+            const monitorInterval = setInterval(async () => {
+                if (!monitoringActive) {
+                    clearInterval(monitorInterval);
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    
+                    // Update state if changed and show in console for debugging
+                    if (data.state && data.state !== window.totoroFace.currentState) {
+                        console.log(`🎭 State change detected: ${window.totoroFace.currentState} → ${data.state}`);
+                        window.totoroFace.setState(data.state);
+                        
+                        // Show state changes in status text temporarily
+                        const statusText = document.getElementById('statusText');
+                        const stateMessages = {
+                            'awake': '👂 Wake word detected!',
+                            'thinking': '🤔 Processing your command...',
+                            'speaking': '🗣️ Responding...',
+                            'idle': '😌 Ready and listening...'
+                        };
+                        
+                        if (stateMessages[data.state]) {
+                            const originalText = statusText.textContent;
+                            statusText.textContent = stateMessages[data.state];
+                            
+                            // Restore original text after a delay (unless it's a listening state)
+                            if (data.state !== 'idle') {
+                                setTimeout(() => {
+                                    if (statusText.textContent === stateMessages[data.state]) {
+                                        statusText.textContent = originalText;
+                                    }
+                                }, 2000);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('State monitoring error (normal if backend disconnected):', error.message);
+                }
+            }, 200); // Check every 200ms for responsive feedback
+        },
+        
+        stop: function() {
+            monitoringActive = false;
+        }
+    };
+}
+
+// Create global state monitor
+window.stateMonitor = startStateMonitoring();
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => {
@@ -172,6 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('demo') === 'true') {
         window.totoroFace.startDemoMode();
     }
+    
+    // Start state monitoring
+    window.stateMonitor.start();
 });
 
 // Additional helper functions for eye animations

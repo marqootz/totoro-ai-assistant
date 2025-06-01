@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM-Enhanced Avatar Expression System</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flubber@0.4.2/build/flubber.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sentiment@5.0.2/build/sentiment.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .research-credit {
+            text-align: center;
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .research-credit a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #avatarContainer {
+            width: 400px;
+            height: 400px;
+            border-radius: 20px;
+            background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
+            border: 3px solid #e9ecef;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.8),
+                inset 0 -2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .avatar-face {
+            max-width: 100%;
+            max-height: 100%;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .llm-prompt-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .prompt-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .prompt-examples {
+            margin-bottom: 15px;
+        }
+
+        .example-prompt {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .example-prompt:hover {
+            background: #d1c4e9;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #2980b9;
+        }
+
+        .secondary-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .variant-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .variant-btn:hover {
+            background: #c0392b;
+        }
+
+        .preset-controls {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .preset-btn.active {
+            background: #e74c3c;
+        }
+
+        .generation-history {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .history-prompt {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .history-result {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .status-indicator {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            #avatarContainer {
+                width: 300px;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="title">🤖 LLM-Enhanced Avatar Expression System</h1>
+        <p class="subtitle">Natural Language Facial Animation powered by Large Language Models</p>
+        
+        <div class="research-credit">
+            🎓 Inspired by <a href="https://arxiv.org/html/2402.06071v1" target="_blank">Keyframer Research</a>: 
+            "Empowering Animation Design using Large Language Models" (Tseng et al., 2024)
+        </div>
+
+        <div id="statusIndicator" class="status-indicator status-success">
+            ✅ System Ready - Describe facial expressions in natural language
+        </div>
+        
+        <div class="main-content">
+            <div class="avatar-section">
+                <div id="avatarContainer"></div>
+                <div class="preset-controls">
+                    <div class="section-title">Quick Presets</div>
+                    <div class="preset-grid">
+                        <button class="preset-btn active" onclick="setEmotion('neutral')">😐 Neutral</button>
+                        <button class="preset-btn" onclick="setEmotion('happy')">😊 Happy</button>
+                        <button class="preset-btn" onclick="setEmotion('sad')">😢 Sad</button>
+                        <button class="preset-btn" onclick="setEmotion('surprised')">😲 Surprised</button>
+                        <button class="preset-btn" onclick="setEmotion('thinking')">🤔 Thinking</button>
+                        <button class="preset-btn" onclick="setEmotion('speaking')">🗣️ Speaking</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="llm-prompt-section">
+                    <div class="section-title">🎭 Natural Language Expression Design</div>
+                    
+                    <div class="prompt-examples">
+                        <div class="example-prompt" onclick="setPromptExample(this)">
+                            Make the avatar look thoughtfully concerned, with slightly furrowed eyebrows and a subtle frown
+                        </div>
+                        <div class="example-prompt" onclick="setPromptExample(this)">
+                            Animate a gentle smile that gradually grows into excitement, with eyes lighting up
+                        </div>
+                        <div class="example-prompt" onclick="setPromptExample(this)">
+                            Create a surprised expression that transitions to curiosity, with raised eyebrows and head tilt
+                        </div>
+                        <div class="example-prompt" onclick="setPromptExample(this)">
+                            Show concentration: squinted eyes, mouth slightly open, thinking deeply
+                        </div>
+                    </div>
+                    
+                    <textarea 
+                        id="promptInput" 
+                        class="prompt-input" 
+                        placeholder="Describe the facial expression you want to create...
+
+Examples:
+• 'Make the avatar look skeptically amused'
+• 'Animate eyes widening with realization'
+• 'Create a warm, welcoming smile'
+• 'Show concern transitioning to relief'"
+                    ></textarea>
+                    
+                    <div class="button-row">
+                        <button class="action-btn primary-btn" onclick="generateExpression()">
+                            🎨 Generate Expression
+                        </button>
+                        <button class="action-btn variant-btn" onclick="generateVariants()">
+                            🔄 Create 3 Variants
+                        </button>
+                        <button class="action-btn secondary-btn" onclick="refineExpression()">
+                            ✨ Refine Current
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="generation-history">
+                    <div class="section-title">📝 Generation History</div>
+                    <div id="historyContainer">
+                        <div class="history-item">
+                            <div class="history-prompt">System Initialized</div>
+                            <div class="history-result">Ready to generate expressions from natural language</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // LLM-Enhanced Expression System
+        class LLMExpressionSystem {
+            constructor(containerId, options = {}) {
+                this.container = document.getElementById(containerId);
+                this.options = {
+                    animationDuration: 800,
+                    enableLLMGeneration: true,
+                    ...options
+                };
+                
+                this.currentEmotion = 'neutral';
+                this.isAnimating = false;
+                this.generationHistory = [];
+                
+                this.init();
+            }
+
+            init() {
+                this.createSVGStructure();
+                this.setupExpressionPaths();
+                this.initializeAnimationSystem();
+                this.setupLLMSystem();
+            }
+
+            createSVGStructure() {
+                // Create high-quality SVG structure (same as before)
+                this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                this.svg.setAttribute('viewBox', '0 0 400 400');
+                this.svg.setAttribute('width', '100%');
+                this.svg.setAttribute('height', '100%');
+                this.svg.classList.add('avatar-face');
+                
+                this.createSVGDefinitions();
+                
+                this.faceGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                this.headPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.headPath.setAttribute('fill', 'url(#faceGradient)');
+                this.headPath.setAttribute('stroke', '#34495e');
+                this.headPath.setAttribute('stroke-width', '2');
+                
+                this.leftEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.leftEye.setAttribute('fill', '#2c3e50');
+                
+                this.rightEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.rightEye.setAttribute('fill', '#2c3e50');
+                
+                this.mouth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.mouth.setAttribute('fill', '#2c3e50');
+                this.mouth.setAttribute('stroke', 'none');
+                this.mouth.setAttribute('stroke-linecap', 'round');
+                
+                this.faceGroup.appendChild(this.headPath);
+                this.faceGroup.appendChild(this.leftEye);
+                this.faceGroup.appendChild(this.rightEye);
+                this.faceGroup.appendChild(this.mouth);
+                this.svg.appendChild(this.faceGroup);
+                this.container.appendChild(this.svg);
+            }
+
+            createSVGDefinitions() {
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                
+                const faceGradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+                faceGradient.setAttribute('id', 'faceGradient');
+                faceGradient.setAttribute('cx', '50%');
+                faceGradient.setAttribute('cy', '40%');
+                faceGradient.setAttribute('r', '60%');
+                
+                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop1.setAttribute('offset', '0%');
+                stop1.setAttribute('stop-color', '#ffffff');
+                stop1.setAttribute('stop-opacity', '0.9');
+                
+                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop2.setAttribute('offset', '100%');
+                stop2.setAttribute('stop-color', '#ecf0f1');
+                
+                faceGradient.appendChild(stop1);
+                faceGradient.appendChild(stop2);
+                defs.appendChild(faceGradient);
+                this.svg.appendChild(defs);
+            }
+
+            setupExpressionPaths() {
+                // Enhanced expression paths with cubic Bézier curves (Figma-style)
+                this.expressions = {
+                    neutral: {
+                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
+                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
+                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
+                        mouth: 'M170,245 Q200,255 230,245 Q200,265 170,245 Z'
+                    },
+                    happy: {
+                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
+                        leftEye: 'M190,185 C190,198.8 178.8,210 165,210 C151.2,210 140,198.8 140,185 C140,171.2 151.2,160 165,160 C178.8,160 190,171.2 190,185 Z',
+                        rightEye: 'M274,185 C274,198.8 262.8,210 249,210 C235.2,210 224,198.8 224,185 C224,171.2 235.2,160 249,160 C262.8,160 274,171.2 274,185 Z',
+                        mouth: 'M160,240 Q200,220 240,240 Q200,270 160,240 Z'
+                    },
+                    sad: {
+                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
+                        leftEye: 'M185,190 C185,202.7 174.7,213 162,213 C149.3,213 139,202.7 139,190 C139,177.3 149.3,167 162,167 C174.7,167 185,177.3 185,190 Z',
+                        rightEye: 'M269,190 C269,202.7 258.7,213 246,213 C233.3,213 223,202.7 223,190 C223,177.3 233.3,167 246,167 C258.7,167 269,177.3 269,190 Z',
+                        mouth: 'M180,265 Q200,280 220,265 Q200,275 180,265 Z'
+                    },
+                    surprised: {
+                        head: 'M75,115 Q75,75 115,75 L285,75 Q325,75 325,115 L325,285 Q325,325 285,325 L115,325 Q75,325 75,285 Z',
+                        leftEye: 'M200,180 C200,202.1 182.1,220 160,220 C137.9,220 120,202.1 120,180 C120,157.9 137.9,140 160,140 C182.1,140 200,157.9 200,180 Z',
+                        rightEye: 'M284,180 C284,202.1 266.1,220 244,220 C221.9,220 204,202.1 204,180 C204,157.9 221.9,140 244,140 C266.1,140 284,157.9 284,180 Z',
+                        mouth: 'M190,250 Q200,230 210,250 Q200,270 190,250 Z'
+                    },
+                    thinking: {
+                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
+                        leftEye: 'M182,180 C182,192.7 171.7,203 159,203 C146.3,203 136,192.7 136,180 C136,167.3 146.3,157 159,157 C171.7,157 182,167.3 182,180 Z',
+                        rightEye: 'M266,180 C266,192.7 255.7,203 243,203 C230.3,203 220,192.7 220,180 C220,167.3 230.3,157 243,157 C255.7,157 266,167.3 266,180 Z',
+                        mouth: 'M185,250 Q200,245 215,250 Q200,255 185,250 Z'
+                    },
+                    speaking: {
+                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
+                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
+                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
+                        mouth: 'M170,235 Q200,215 230,235 Q200,275 170,235 Z'
+                    }
+                };
+            }
+
+            initializeAnimationSystem() {
+                this.setInitialPaths();
+                this.setupMorphingAnimations();
+            }
+
+            setInitialPaths() {
+                const neutral = this.expressions.neutral;
+                this.headPath.setAttribute('d', neutral.head);
+                this.leftEye.setAttribute('d', neutral.leftEye);
+                this.rightEye.setAttribute('d', neutral.rightEye);
+                this.mouth.setAttribute('d', neutral.mouth);
+            }
+
+            setupMorphingAnimations() {
+                this.morphFunctions = {};
+                
+                Object.keys(this.expressions).forEach(emotion => {
+                    this.morphFunctions[emotion] = {};
+                    const paths = this.expressions[emotion];
+                    
+                    ['head', 'leftEye', 'rightEye', 'mouth'].forEach(element => {
+                        this.morphFunctions[emotion][element] = {};
+                        
+                        Object.keys(this.expressions).forEach(targetEmotion => {
+                            if (emotion !== targetEmotion) {
+                                try {
+                                    this.morphFunctions[emotion][element][targetEmotion] = 
+                                        flubber.interpolate(paths[element], this.expressions[targetEmotion][element]);
+                                } catch (e) {
+                                    console.warn(`Failed to create morph from ${emotion} to ${targetEmotion} for ${element}`);
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+
+            setupLLMSystem() {
+                // Initialize LLM-based expression generation
+                this.llmEndpoint = '/api/generate_expression';
+                this.requestId = 0;
+            }
+
+            async generateFromPrompt(prompt) {
+                this.setStatus('loading', 'Generating expression from prompt...');
+                
+                try {
+                    // Simulate LLM API call for demo
+                    const response = await this.simulateLLMResponse(prompt);
+                    
+                    if (response.success) {
+                        this.applyGeneratedExpression(response.expression);
+                        this.addToHistory(prompt, response.description);
+                        this.setStatus('success', `Generated: ${response.description}`);
+                    } else {
+                        this.setStatus('error', 'Failed to generate expression');
+                    }
+                } catch (error) {
+                    console.error('LLM generation error:', error);
+                    this.setStatus('error', 'Generation failed - using fallback');
+                    this.fallbackToSentimentAnalysis(prompt);
+                }
+            }
+
+            async simulateLLMResponse(prompt) {
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Simple prompt analysis for demo
+                const lowerPrompt = prompt.toLowerCase();
+                
+                if (lowerPrompt.includes('happy') || lowerPrompt.includes('smile') || lowerPrompt.includes('joy')) {
+                    return {
+                        success: true,
+                        expression: 'happy',
+                        description: 'Warm, joyful smile with bright eyes'
+                    };
+                } else if (lowerPrompt.includes('sad') || lowerPrompt.includes('frown') || lowerPrompt.includes('concern')) {
+                    return {
+                        success: true,
+                        expression: 'sad',
+                        description: 'Concerned expression with downturned features'
+                    };
+                } else if (lowerPrompt.includes('surprised') || lowerPrompt.includes('shock') || lowerPrompt.includes('wide')) {
+                    return {
+                        success: true,
+                        expression: 'surprised',
+                        description: 'Wide-eyed surprise with raised eyebrows'
+                    };
+                } else if (lowerPrompt.includes('think') || lowerPrompt.includes('concentrate') || lowerPrompt.includes('focus')) {
+                    return {
+                        success: true,
+                        expression: 'thinking',
+                        description: 'Thoughtful concentration with focused gaze'
+                    };
+                } else {
+                    return {
+                        success: true,
+                        expression: 'neutral',
+                        description: 'Calm, neutral expression'
+                    };
+                }
+            }
+
+            applyGeneratedExpression(emotion) {
+                this.setExpression(emotion);
+            }
+
+            setExpression(emotion) {
+                if (!this.expressions[emotion] || this.isAnimating) return;
+                
+                this.transitionToExpression(emotion);
+                
+                // Update active preset button
+                document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+                const activeBtn = document.querySelector(`.preset-btn[onclick="setEmotion('${emotion}')"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+
+            transitionToExpression(emotion) {
+                if (emotion === this.currentEmotion) return;
+                
+                this.isAnimating = true;
+                const duration = this.options.animationDuration;
+                
+                const elements = ['head', 'leftEye', 'rightEye', 'mouth'];
+                const elementMappings = {
+                    head: this.headPath,
+                    leftEye: this.leftEye,
+                    rightEye: this.rightEye,
+                    mouth: this.mouth
+                };
+                
+                const timeline = gsap.timeline({
+                    onComplete: () => {
+                        this.currentEmotion = emotion;
+                        this.isAnimating = false;
+                    }
+                });
+                
+                elements.forEach((element, index) => {
+                    const domElement = elementMappings[element];
+                    const morphFunction = this.morphFunctions[this.currentEmotion]?.[element]?.[emotion];
+                    
+                    if (morphFunction) {
+                        timeline.to({}, {
+                            duration: duration / 1000,
+                            ease: "power2.inOut",
+                            onUpdate: function() {
+                                const progress = this.progress();
+                                const newPath = morphFunction(progress);
+                                domElement.setAttribute('d', newPath);
+                            },
+                            delay: index * 0.03
+                        }, 0);
+                    }
+                });
+            }
+
+            fallbackToSentimentAnalysis(text) {
+                if (typeof Sentiment !== 'undefined') {
+                    const sentiment = new Sentiment();
+                    const result = sentiment.analyze(text);
+                    const emotion = this.determineEmotion(result);
+                    this.setExpression(emotion);
+                    this.addToHistory(text, `Fallback sentiment analysis: ${emotion}`);
+                }
+            }
+
+            determineEmotion(sentimentResult) {
+                const score = sentimentResult.score;
+                if (score > 2) return 'happy';
+                if (score < -2) return 'sad';
+                if (Math.abs(sentimentResult.comparative) > 0.3) return 'surprised';
+                return 'neutral';
+            }
+
+            setStatus(type, message) {
+                const indicator = document.getElementById('statusIndicator');
+                indicator.className = `status-indicator status-${type}`;
+                indicator.textContent = message;
+            }
+
+            addToHistory(prompt, result) {
+                this.generationHistory.unshift({ prompt, result, timestamp: new Date() });
+                this.updateHistoryDisplay();
+            }
+
+            updateHistoryDisplay() {
+                const container = document.getElementById('historyContainer');
+                container.innerHTML = this.generationHistory.slice(0, 5).map(item => `
+                    <div class="history-item">
+                        <div class="history-prompt">${item.prompt}</div>
+                        <div class="history-result">${item.result}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Global variables
+        let expressionSystem;
+        
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            expressionSystem = new LLMExpressionSystem('avatarContainer');
+        });
+        
+        // UI Functions
+        function setEmotion(emotion) {
+            expressionSystem.setExpression(emotion);
+        }
+
+        function setPromptExample(element) {
+            document.getElementById('promptInput').value = element.textContent.trim();
+        }
+
+        function generateExpression() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (prompt) {
+                expressionSystem.generateFromPrompt(prompt);
+            }
+        }
+
+        function generateVariants() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (prompt) {
+                expressionSystem.setStatus('loading', 'Generating 3 expression variants...');
+                // Simulate variant generation
+                setTimeout(() => {
+                    expressionSystem.setStatus('success', 'Generated 3 variants (feature coming soon)');
+                }, 2000);
+            }
+        }
+
+        function refineExpression() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (prompt) {
+                expressionSystem.setStatus('loading', 'Refining current expression...');
+                setTimeout(() => {
+                    expressionSystem.setStatus('success', 'Expression refined (feature coming soon)');
+                }, 1500);
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generateExpression();
+            }
+        });
+    </script>
+</body>
+</html> 

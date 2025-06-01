@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Expression System - Big Hero 6 Style Avatar</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flubber@0.4.2/build/flubber.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sentiment@5.0.2/build/sentiment.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .avatar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar-wrapper {
+            width: 300px;
+            height: 300px;
+            border-radius: 20px;
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .emotion-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .emotion-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .emotion-btn.active {
+            background: #e74c3c;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .settings-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 25px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 19px;
+            width: 19px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #3498db;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(25px);
+        }
+
+        .text-input-section {
+            margin-bottom: 20px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .analyze-btn {
+            background: #27ae60;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        .analyze-btn:hover {
+            background: #229954;
+        }
+
+        .performance-metrics {
+            background: #2c3e50;
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .demo-text-samples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .sample-btn {
+            background: #9b59b6;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sample-btn:hover {
+            background: #8e44ad;
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                padding: 20px;
+            }
+            
+            .title {
+                font-size: 2em;
+            }
+            
+            .avatar-wrapper {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .controls {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="title">Fluid Expression System</h1>
+        <p class="subtitle">Big Hero 6-Style Avatar with Real-Time LLM Analysis</p>
+        
+        <div class="avatar-container">
+            <div class="avatar-wrapper" id="avatarContainer"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-button emotion-btn" onclick="setEmotion('neutral')">Neutral</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('happy')">Happy</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('sad')">Sad</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('surprised')">Surprised</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('thinking')">Thinking</button>
+            <button class="control-button emotion-btn" onclick="setEmotion('speaking')">Speaking</button>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-title">Animation Settings</div>
+            <div class="setting-item">
+                <span>Sentiment Analysis</span>
+                <label class="toggle">
+                    <input type="checkbox" id="sentimentToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Performance Monitoring</span>
+                <label class="toggle">
+                    <input type="checkbox" id="performanceToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>WebWorker Analysis</span>
+                <label class="toggle">
+                    <input type="checkbox" id="webWorkerToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="text-input-section">
+            <input type="text" class="text-input" id="textInput" 
+                   placeholder="Enter text to analyze sentiment and trigger expressions...">
+            <button class="analyze-btn" onclick="analyzeText()">Analyze Sentiment</button>
+            
+            <div class="demo-text-samples">
+                <button class="sample-btn" onclick="analyzePresetText('I am so excited about this new feature!')">😊 Happy Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('This is really disappointing and frustrating.')">😢 Sad Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('Wow, I never expected that to happen!')">😲 Surprised Sample</button>
+                <button class="sample-btn" onclick="analyzePresetText('Let me think about this carefully...')">🤔 Thinking Sample</button>
+            </div>
+        </div>
+        
+        <div class="performance-metrics" id="performanceMetrics" style="display: none;">
+            <div class="metric-row">
+                <span>FPS:</span>
+                <span id="fpsMetric">--</span>
+            </div>
+            <div class="metric-row">
+                <span>Current Emotion:</span>
+                <span id="emotionMetric">neutral</span>
+            </div>
+            <div class="metric-row">
+                <span>Queue Length:</span>
+                <span id="queueMetric">0</span>
+            </div>
+            <div class="metric-row">
+                <span>Animation Frames:</span>
+                <span id="framesMetric">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="avatar-expression-system.js"></script>
+    <script>
+        let expressionSystem;
+        let performanceInterval;
+        
+        // Initialize the expression system
+        document.addEventListener('DOMContentLoaded', function() {
+            expressionSystem = new FluidExpressionSystem('avatarContainer', {
+                enableSentimentAnalysis: true,
+                useWebWorkers: true,
+                fallbackToCanvas: false,
+                maxControlPoints: 20,
+                maxSimultaneousMorphs: 3,
+                animationDuration: 800
+            });
+            
+            setupEventListeners();
+            startPerformanceMonitoring();
+            
+            // Simulate LLM response streaming
+            simulateLLMResponses();
+        });
+        
+        function setupEventListeners() {
+            document.getElementById('sentimentToggle').addEventListener('change', function() {
+                if (this.checked) {
+                    expressionSystem.enableSentimentAnalysis();
+                } else {
+                    expressionSystem.disableSentimentAnalysis();
+                }
+            });
+            
+            document.getElementById('performanceToggle').addEventListener('change', function() {
+                const metricsDiv = document.getElementById('performanceMetrics');
+                if (this.checked) {
+                    metricsDiv.style.display = 'block';
+                    startPerformanceMonitoring();
+                } else {
+                    metricsDiv.style.display = 'none';
+                    if (performanceInterval) {
+                        clearInterval(performanceInterval);
+                    }
+                }
+            });
+            
+            document.getElementById('webWorkerToggle').addEventListener('change', function() {
+                expressionSystem.options.useWebWorkers = this.checked;
+            });
+            
+            // Enter key for text analysis
+            document.getElementById('textInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    analyzeText();
+                }
+            });
+        }
+        
+        function setEmotion(emotion) {
+            // Update active button
+            document.querySelectorAll('.emotion-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Set expression
+            expressionSystem.setExpression(emotion);
+        }
+        
+        function analyzeText() {
+            const text = document.getElementById('textInput').value.trim();
+            if (text) {
+                expressionSystem.analyzeSentiment(text);
+                document.getElementById('textInput').value = '';
+            }
+        }
+        
+        function analyzePresetText(text) {
+            document.getElementById('textInput').value = text;
+            expressionSystem.analyzeSentiment(text);
+            
+            // Clear input after a moment
+            setTimeout(() => {
+                document.getElementById('textInput').value = '';
+            }, 1000);
+        }
+        
+        function startPerformanceMonitoring() {
+            if (performanceInterval) clearInterval(performanceInterval);
+            
+            performanceInterval = setInterval(() => {
+                const metrics = expressionSystem.getPerformanceMetrics();
+                
+                document.getElementById('fpsMetric').textContent = Math.round(metrics.fps);
+                document.getElementById('emotionMetric').textContent = metrics.currentEmotion;
+                document.getElementById('queueMetric').textContent = metrics.queueLength;
+                document.getElementById('framesMetric').textContent = metrics.animationFrames;
+            }, 500);
+        }
+        
+        function simulateLLMResponses() {
+            // Simulate different conversation scenarios
+            const scenarios = [
+                {
+                    delay: 3000,
+                    responses: [
+                        "I'm really excited to help you with this project!",
+                        "Let me think about the best approach for this...",
+                        "That's a fantastic idea you have there!"
+                    ]
+                },
+                {
+                    delay: 8000,
+                    responses: [
+                        "Hmm, this is quite challenging to solve.",
+                        "I need to consider all the possibilities here.",
+                        "Actually, I think I found a great solution!"
+                    ]
+                },
+                {
+                    delay: 15000,
+                    responses: [
+                        "Wow, I didn't expect that outcome!",
+                        "This is really interesting to analyze.",
+                        "I'm happy we could work through this together."
+                    ]
+                }
+            ];
+            
+            scenarios.forEach(scenario => {
+                setTimeout(() => {
+                    scenario.responses.forEach((response, index) => {
+                        setTimeout(() => {
+                            expressionSystem.analyzeSentiment(response);
+                        }, index * 2000);
+                    });
+                }, scenario.delay);
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey) {
+                switch(e.key) {
+                    case '1': setEmotion('neutral'); break;
+                    case '2': setEmotion('happy'); break;
+                    case '3': setEmotion('sad'); break;
+                    case '4': setEmotion('surprised'); break;
+                    case '5': setEmotion('thinking'); break;
+                    case '6': setEmotion('speaking'); break;
+                }
+            }
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (expressionSystem) {
+                expressionSystem.destroy();
+            }
+            if (performanceInterval) {
+                clearInterval(performanceInterval);
+            }
+        });
+    </script>
+</body>
+</html> 
