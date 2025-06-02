@@ -344,6 +344,59 @@
         </div>
         
         <div class="settings-section">
+            <div class="settings-title">🗣️ Voice Interaction System</div>
+            
+            <div class="setting-item">
+                <span>🎤 Voice Input (Speech Recognition)</span>
+                <label class="toggle">
+                    <input type="checkbox" id="voiceInputToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-item">
+                <span>🤖 AI Response Generation</span>
+                <label class="toggle">
+                    <input type="checkbox" id="aiResponseToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-item">
+                <span>🔊 TTS Output with Facial Animation</span>
+                <label class="toggle">
+                    <input type="checkbox" id="ttsOutputToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-item">
+                <span>🎭 Auto-Expressions from Content</span>
+                <label class="toggle">
+                    <input type="checkbox" id="autoExpressionsToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 8px;">Voice Interaction Status:</div>
+                <div id="voiceInteractionStatus" style="font-size: 14px; color: #666;">System ready - toggle settings above to start</div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="control-button" style="background: #27ae60; color: white;" onclick="startVoiceInteraction()">
+                    🎙️ Start Voice Chat
+                </button>
+                <button class="control-button" style="background: #e74c3c; color: white;" onclick="stopVoiceInteraction()">
+                    ⏹️ Stop Voice Chat
+                </button>
+                <button class="control-button" style="background: #3498db; color: white;" onclick="testTTSWithAnimation()">
+                    🧪 Test TTS + Animation
+                </button>
+            </div>
+        </div>
+        
+        <div class="settings-section">
             <h3 class="settings-title">⚙️ System Settings</h3>
             <div class="setting-item">
                 <span>Real-time Sentiment Analysis</span>
@@ -422,6 +475,46 @@
             <div class="metric-row">
                 <span>Render Quality:</span>
                 <span id="qualityMetric">High</span>
+            </div>
+        </div>
+        
+        <button class="control-button emotion-btn" onclick="toggleAudioDebug()">
+            🎤 Toggle Audio Debug
+        </button>
+        
+        <!-- NEW: Viseme Testing Section -->
+        <div class="settings-section">
+            <div class="settings-title">🗣️ Viseme Testing (19 Visemes)</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('rest')">Rest</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('closed')">Closed (M,B,P)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('open')">Open (A,Ah)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('ee')">EE (I,E)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('oh')">OH (O)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('oo')">OO (U)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('s')">S (S,Z,Sh)</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('fv')">F,V</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('th')">TH</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('l')">L,R</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('k')">K,G,NG</button>
+                <button class="control-button" style="background: #27ae60; color: white; font-size: 12px;" onclick="testViseme('t')">T,D,N</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('ay')">AY (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('aw')">AW (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('uh')">UH (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('w')">W (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('y')">Y (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('ch')">CH,J (New)</button>
+                <button class="control-button" style="background: #e74c3c; color: white; font-size: 12px;" onclick="testViseme('r')">R (New)</button>
+                <button class="control-button" style="background: #9b59b6; color: white; font-size: 12px;" onclick="testViseme('semiopen')">SemiOpen (New)</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="control-button" style="background: #3498db; color: white;" onclick="testSmoothSequence()">
+                    🌊 Test Smooth Sequence
+                </button>
+                <button class="control-button" style="background: #f39c12; color: white;" onclick="testWordExample()">
+                    📝 Test "Hello World"
+                </button>
             </div>
         </div>
     </div>
@@ -679,6 +772,15 @@
                         rightEye: { cx: 295, cy: 112, r: 10 },
                         mouth: { cx: 200, cy: 188, rx: 30, ry: 15 }, // Wide ecstatic smile
                         headRotation: 8
+                    },
+                    
+                    // MISSING EXPRESSIONS - Adding expressions referenced by voice interaction system
+                    awake: {
+                        head: 'M400 120C400 180.751 310.457 230 200 230C89.5431 230 0 180.751 0 120C0 59.2487 50.4 10 200 10C350 10 400 59.2487 400 120Z',
+                        leftEye: { cx: 105, cy: 118, r: 18 }, // Alert, wide-open eyes
+                        rightEye: { cx: 295, cy: 118, r: 18 },
+                        mouth: { cx: 200, cy: 182, rx: 16, ry: 4 }, // Slightly open, attentive mouth
+                        headRotation: 2
                     }
                 };
                 
@@ -790,8 +892,97 @@
                         width: 38, height: 6, curve: 0.1, asymmetry: 0,
                         lipThickness: 2, cornerHeight: 0.05, compression: 0, stretch: 0,
                         teethVisible: true, tongueVisible: true, tonguePosition: 0.75
+                    },
+
+                    // EXPANDED VISEME SET FOR BETTER REALISM
+                    
+                    // AY - Diphthong "ay" as in "say" (transitional vowel)
+                    ay: {
+                        width: 42, height: 12, curve: 0.3, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.2, compression: 0, stretch: 0.1,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.5
+                    },
+                    
+                    // AW - "aw" as in "how" (back vowel with rounding)
+                    aw: {
+                        width: 32, height: 18, curve: 0.1, asymmetry: 0,
+                        lipThickness: 3, cornerHeight: 0, compression: 0.2, stretch: 0.2,
+                        tongueVisible: true, tonguePosition: 0.3
+                    },
+                    
+                    // UH - Schwa/unstressed vowel (uh, er)
+                    uh: {
+                        width: 35, height: 8, curve: 0, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0, compression: 0.1, stretch: 0,
+                        tongueVisible: true, tonguePosition: 0.5
+                    },
+                    
+                    // W - Rounded semi-vowel (w)
+                    w: {
+                        width: 22, height: 10, curve: 0, asymmetry: 0,
+                        lipThickness: 4, cornerHeight: 0, compression: 0.5, stretch: 0,
+                        teethVisible: false
+                    },
+                    
+                    // Y - Palatal semi-vowel (y)
+                    y: {
+                        width: 45, height: 6, curve: 0.4, asymmetry: 0,
+                        lipThickness: 1, cornerHeight: 0.2, compression: 0, stretch: -0.1,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.7
+                    },
+                    
+                    // CH - Affricate (ch, j)
+                    ch: {
+                        width: 38, height: 8, curve: 0, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0, compression: 0.1, stretch: 0,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.6
+                    },
+                    
+                    // R - American R (retroflex)
+                    r: {
+                        width: 40, height: 10, curve: 0.1, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.05, compression: 0.1, stretch: 0,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.4
+                    },
+                    
+                    // SEMI-OPEN - Intermediate between rest and open (for smoother transitions)
+                    semiopen: {
+                        width: 38, height: 10, curve: 0.1, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.05, compression: 0, stretch: 0.1,
+                        teethVisible: false, tongueVisible: true, tonguePosition: 0.4
                     }
                 };
+
+                // TRANSITION BLENDING SYSTEM for smooth animations
+                this.transitionBlends = {
+                    // Define which visemes can smoothly blend into each other
+                    'rest': ['semiopen', 'closed', 'uh'],
+                    'closed': ['rest', 'semiopen', 'oo', 'w'],
+                    'open': ['semiopen', 'ay', 'aw', 'ah'],
+                    'ee': ['y', 'ay', 'semiopen'],
+                    'oh': ['aw', 'oo', 'uh'],
+                    'oo': ['w', 'oh', 'closed'],
+                    's': ['th', 'ch', 'ee'],
+                    'fv': ['closed', 'th'],
+                    'th': ['s', 'fv', 't'],
+                    'l': ['r', 't', 'semiopen'],
+                    'k': ['uh', 'semiopen'],
+                    't': ['th', 'l', 'ch'],
+                    'ay': ['ee', 'open', 'y'],
+                    'aw': ['oh', 'open'],
+                    'uh': ['rest', 'semiopen', 'k'],
+                    'w': ['oo', 'closed'],
+                    'y': ['ee', 'ay'],
+                    'ch': ['s', 't'],
+                    'r': ['l', 'uh'],
+                    'semiopen': ['rest', 'open', 'uh']
+                };
+
+                // Animation state tracking for smoother transitions
+                this.currentViseme = 'rest';
+                this.targetViseme = 'rest';
+                this.isTransitioning = false;
+                this.transitionProgress = 0;
                 
                 // Create the parametric mouth shape
                 this.createParametricMouth();
@@ -1115,27 +1306,98 @@
                 };
             }
 
-            // PARAMETRIC MOUTH ANIMATION for real-time lip sync
+            // PARAMETRIC MOUTH ANIMATION for real-time lip sync with SMOOTH TRANSITIONS
             updateMouthForPhoneme(phoneme, duration, scaleMultiplier) {
-                console.log(`Parametric mouth: ${phoneme}, duration: ${duration}, scale: ${scaleMultiplier}`);
+                console.log(`Smooth parametric mouth: ${phoneme}, duration: ${duration}, scale: ${scaleMultiplier}`);
                 
                 if (!this.phonemeMouths[phoneme]) {
                     console.log(`No mouth parameters found for phoneme: ${phoneme}`);
                     return;
                 }
+
+                // Check if we need an intermediate transition for smoothness
+                const needsBlending = this.shouldUseBlendedTransition(this.currentViseme, phoneme);
+                
+                if (needsBlending && !this.isTransitioning) {
+                    this.performBlendedTransition(phoneme, duration, scaleMultiplier);
+                } else {
+                    this.performDirectTransition(phoneme, duration, scaleMultiplier);
+                }
+            }
+
+            // Check if we should use a blended transition
+            shouldUseBlendedTransition(currentViseme, targetViseme) {
+                if (currentViseme === targetViseme) return false;
+                
+                // Check if the visemes are "far apart" and would benefit from intermediate steps
+                const currentParams = this.phonemeMouths[currentViseme];
+                const targetParams = this.phonemeMouths[targetViseme];
+                
+                if (!currentParams || !targetParams) return false;
+                
+                // Calculate "distance" between visemes
+                const widthDiff = Math.abs(currentParams.width - targetParams.width);
+                const heightDiff = Math.abs(currentParams.height - targetParams.height);
+                const curveDiff = Math.abs(currentParams.curve - targetParams.curve);
+                
+                // If the changes are large, use blended transition
+                return (widthDiff > 15 || heightDiff > 10 || curveDiff > 0.4);
+            }
+
+            // Perform smooth blended transition through intermediate visemes
+            performBlendedTransition(targetPhoneme, duration, scaleMultiplier) {
+                this.isTransitioning = true;
+                console.log(`Blended transition: ${this.currentViseme} -> ${targetPhoneme}`);
+                
+                // Find intermediate viseme if available
+                const intermediates = this.transitionBlends[this.currentViseme] || [];
+                const targetIntermediates = this.transitionBlends[targetPhoneme] || [];
+                
+                // Find a common intermediate, or use 'semiopen' as fallback
+                let intermediate = intermediates.find(v => targetIntermediates.includes(v)) || 'semiopen';
+                
+                // Special cases for better flow
+                if (this.currentViseme === 'rest' && ['open', 'oh', 'aw'].includes(targetPhoneme)) {
+                    intermediate = 'semiopen';
+                } else if (this.currentViseme === 'closed' && ['ee', 'ay'].includes(targetPhoneme)) {
+                    intermediate = 'semiopen';
+                }
+
+                const totalDuration = Math.max(duration, 0.4); // Minimum time for smooth blending
+                const stepDuration = totalDuration / 2;
+
+                // Step 1: Transition to intermediate
+                setTimeout(() => {
+                    this.performDirectTransition(intermediate, stepDuration, scaleMultiplier * 0.9);
+                }, 0);
+
+                // Step 2: Transition to target
+                setTimeout(() => {
+                    this.performDirectTransition(targetPhoneme, stepDuration, scaleMultiplier);
+                    this.isTransitioning = false;
+                }, stepDuration * 1000);
+            }
+
+            // Direct transition with improved smoothing
+            performDirectTransition(phoneme, duration, scaleMultiplier) {
+                // Update current viseme tracking
+                this.currentViseme = phoneme;
                 
                 // Get base parameters for this phoneme
                 const baseParams = this.phonemeMouths[phoneme];
-                console.log(`Base parameters for ${phoneme}:`, baseParams);
+                console.log(`Direct transition to ${phoneme}:`, baseParams);
                 
                 // Apply generative variations for organic feel
                 const variationParams = this.generateParametricVariation(phoneme, baseParams, scaleMultiplier);
                 
-                // Smooth transition to new mouth shape using GSAP
-                this.morphParametricMouth(variationParams, duration);
+                // Use longer, smoother transition with better easing
+                const smoothDuration = Math.max(duration, 0.2); // Minimum duration for visibility
+                
+                // Smooth transition to new mouth shape using GSAP with improved easing
+                this.morphParametricMouth(variationParams, smoothDuration, 'power1.inOut');
                 
                 // Add secondary facial animations for enhanced realism
-                this.addParametricSecondaryAnimations(phoneme, duration);
+                this.addParametricSecondaryAnimations(phoneme, smoothDuration);
             }
 
             // GENERATIVE PARAMETRIC VARIATION SYSTEM
@@ -1201,7 +1463,7 @@
             }
 
             // SMOOTH PARAMETRIC MORPHING
-            morphParametricMouth(targetParams, duration) {
+            morphParametricMouth(targetParams, duration, ease = "power2.inOut") {
                 if (!this.mouthGroup) {
                     console.warn('Parametric mouth not initialized');
                     return;
@@ -1221,7 +1483,7 @@
                     cornerHeight: targetParams.cornerHeight,
                     compression: targetParams.compression,
                     stretch: targetParams.stretch,
-                    ease: "power2.inOut",
+                    ease: ease,
                     onUpdate: () => {
                         // Update the mouth shape every frame during the transition
                         this.updateParametricMouth(this.mouthParameters);
@@ -1590,7 +1852,8 @@
         // Global variables
         let expressionSystem;
         let performanceInterval;
-        let audioProcessor; // New audio processing system
+        let audioProcessor; // Audio processing for lip sync input
+        let voiceInteractionSystem; // NEW: Complete voice interaction system
         
         // Audio processing class for real-time lip sync (PROFESSIONAL TECHNIQUES)
         class RealTimeAudioProcessor {
@@ -1618,10 +1881,6 @@
                 this.coreShapeUsage = 0;
                 this.totalShapeUsage = 0;
                 
-                // SVG cache for faster loading
-                this.svgCache = new Map();
-                this.preloadSVGs();
-                
                 // SPEECH-TO-TEXT SYSTEM for enhanced phoneme detection
                 this.speechRecognition = null;
                 this.useSpeechRecognition = false; // Toggle between frequency analysis and speech recognition
@@ -1630,33 +1889,6 @@
                 this.lastSpeechUpdate = 0;
                 
                 this.initializeSpeechRecognition();
-            }
-            
-            async preloadSVGs() {
-                // Preload all SVG visemes for faster real-time performance
-                const svgFiles = [
-                    'assets/ah.svg', 'assets/e.svg', 'assets/oh.svg', 'assets/w-oo.svg',
-                    'assets/s.svg', 'assets/f.svg', 'assets/l.svg', 'assets/d.svg', 'assets/uh.svg'
-                ];
-                
-                console.log('Starting SVG preload...');
-                
-                for (const file of svgFiles) {
-                    try {
-                        console.log(`Loading ${file}...`);
-                        const response = await fetch(file);
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                        const svgText = await response.text();
-                        this.svgCache.set(file, svgText);
-                        console.log(`✓ Preloaded: ${file} (${svgText.length} characters)`);
-                    } catch (error) {
-                        console.error(`✗ Failed to preload: ${file}`, error);
-                    }
-                }
-                console.log(`SVG cache ready: ${this.svgCache.size} files loaded`);
-                console.log('Cached files:', Array.from(this.svgCache.keys()));
             }
             
             // SPEECH-TO-TEXT ENHANCED PHONEME DETECTION
@@ -1711,138 +1943,35 @@
             }
             
             textToPhonemeSequence(text) {
-                // ENHANCED PHONEME MAPPING with professional linguistic rules
-                // Based on Carnegie Mellon University Pronouncing Dictionary patterns
+                // Basic phoneme mapping for lip sync
+                const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
+                const phonemes = [];
                 
-                const phoneticRules = {
-                    // Vowel patterns (most expressive for animation)
-                    'ee': 'ee', 'ea': 'ee', 'e_e': 'ee', 'i_e': 'ee', 'ie': 'ee',
-                    'ai': 'open', 'ay': 'open', 'a_e': 'open', 'ei': 'open',
-                    'aa': 'open', 'ah': 'open', 'a': 'open',
-                    'oo': 'oo', 'ou': 'oo', 'u_e': 'oo', 'ue': 'oo', 'ew': 'oo',
-                    'oh': 'oh', 'oa': 'oh', 'o_e': 'oh', 'ow': 'oh', 'oe': 'oh',
-                    'uh': 'oh', 'u': 'oh', 'o': 'oh',
-                    
-                    // Consonant clusters (place of articulation)
-                    'sh': 's', 'ch': 's', 'th': 'th', 'ph': 'fv', 'gh': 'fv',
-                    'ng': 'k', 'nk': 'k', 'ck': 'k',
-                    'mb': 'closed', 'mp': 'closed',
-                    'nd': 't', 'nt': 't', 'st': 's', 'sp': 'closed',
-                    
-                    // Individual consonants
-                    'b': 'closed', 'm': 'closed', 'p': 'closed', 'w': 'oo',
-                    'f': 'fv', 'v': 'fv',
-                    't': 't', 'd': 't', 'n': 't', 's': 's', 'z': 's',
-                    'l': 'l', 'r': 'l',
-                    'k': 'k', 'g': 'k', 'h': 'open',
-                    
-                    // Silent letters (don't generate phonemes)
-                    'silent': ['e$', 'gh$', 'mb$', 'kn^', 'wr^', 'ps^']
-                };
-                
-                // Word-level phoneme sequences for common words
                 const wordPhonemes = {
                     'hello': ['k', 'open', 'l', 'oh'],
                     'world': ['oo', 'l', 't'],
                     'how': ['k', 'open', 'oo'],
                     'are': ['open', 'l'],
                     'you': ['oo'],
-                    'the': ['th', 'open'],
-                    'and': ['open', 't'],
-                    'this': ['th', 'ee', 's'],
-                    'that': ['th', 'open', 't'],
-                    'with': ['oo', 'ee', 'th'],
-                    'what': ['oo', 'open', 't'],
-                    'when': ['oo', 'open', 't'],
-                    'where': ['oo', 'open', 'l'],
-                    'good': ['k', 'oo', 't'],
-                    'great': ['k', 'ee', 't'],
-                    'nice': ['t', 'open', 's'],
-                    'fine': ['fv', 'open', 't'],
-                    'okay': ['oh', 'open'],
-                    'yes': ['ee', 's'],
-                    'no': ['t', 'oh'],
-                    'maybe': ['open', 'ee'],
-                    'sure': ['s', 'l'],
-                    'thanks': ['th', 'open', 'k', 's'],
-                    'please': ['fv', 'ee', 's'],
-                    'sorry': ['s', 'oh', 'ee'],
-                    'excuse': ['k', 's', 'oo', 's']
                 };
-                
-                const phonemes = [];
-                const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
                 
                 for (let word of words) {
                     if (wordPhonemes[word]) {
-                        // Use pre-mapped high-quality phonemes
                         phonemes.push(...wordPhonemes[word]);
                     } else {
-                        // Phonetic analysis for unknown words
-                        const wordPhonemes = this.analyzeWordPhonetically(word, phoneticRules);
-                        phonemes.push(...wordPhonemes);
+                        // Simple fallback
+                        for (let char of word) {
+                            if ('aeiou'.includes(char)) {
+                                phonemes.push('open');
+                            } else {
+                                phonemes.push('closed');
+                            }
+                        }
                     }
-                    
-                    // Add brief pause between words
                     phonemes.push('rest');
                 }
                 
                 return phonemes;
-            }
-            
-            analyzeWordPhonetically(word, phoneticRules) {
-                const phonemes = [];
-                let i = 0;
-                
-                while (i < word.length) {
-                    let matched = false;
-                    
-                    // Try to match multi-character patterns first
-                    for (let len = 3; len > 0; len--) {
-                        const substr = word.substr(i, len);
-                        if (phoneticRules[substr]) {
-                            phonemes.push(phoneticRules[substr]);
-                            i += len;
-                            matched = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!matched) {
-                        // Single character fallback
-                        const char = word[i];
-                        if (phoneticRules[char]) {
-                            phonemes.push(phoneticRules[char]);
-                        } else if ('aeiou'.includes(char)) {
-                            phonemes.push('open'); // Default vowel
-                        } else if (char.match(/[bcdfghjklmnpqrstvwxyz]/)) {
-                            phonemes.push('closed'); // Default consonant
-                        }
-                        i++;
-                    }
-                }
-                
-                return phonemes;
-            }
-            
-            // HYBRID PHONEME DETECTION: Combines speech recognition and frequency analysis
-            getEnhancedPhoneme() {
-                if (this.useSpeechRecognition && this.speechPhonemeQueue.length > 0) {
-                    // Use speech-to-text phonemes with timing
-                    const timeSinceUpdate = Date.now() - this.lastSpeechUpdate;
-                    const phonemeIndex = Math.floor(timeSinceUpdate / 150); // 150ms per phoneme
-                    
-                    if (phonemeIndex < this.speechPhonemeQueue.length) {
-                        return this.speechPhonemeQueue[phonemeIndex];
-                    } else {
-                        // Speech sequence finished, clear queue
-                        this.speechPhonemeQueue = [];
-                        return 'rest';
-                    }
-                } else {
-                    // Fall back to frequency analysis
-                    return this.detectPhoneme(this.dataArray);
-                }
             }
             
             async startListening() {
@@ -1854,16 +1983,15 @@
                         audio: { 
                             echoCancellation: true,
                             noiseSuppression: true,
-                            sampleRate: 16000 // Lower sample rate for performance
+                            sampleRate: 16000
                         } 
                     });
                     
                     this.microphone = this.audioContext.createMediaStreamSource(stream);
                     this.analyser = this.audioContext.createAnalyser();
                     
-                    // Optimize for performance
-                    this.analyser.fftSize = 512; // Smaller FFT for speed
-                    this.analyser.smoothingTimeConstant = 0.8; // Professional smoothing
+                    this.analyser.fftSize = 512;
+                    this.analyser.smoothingTimeConstant = 0.8;
                     
                     this.bufferLength = this.analyser.frequencyBinCount;
                     this.dataArray = new Uint8Array(this.bufferLength);
@@ -1883,7 +2011,7 @@
                     }
                     
                     this.processAudio();
-                    console.log('Real-time audio processing started with enhanced phoneme detection');
+                    console.log('Real-time audio processing started');
                     
                 } catch (error) {
                     console.error('Error starting audio:', error);
@@ -1896,298 +2024,58 @@
                 this.analyser.getByteFrequencyData(this.dataArray);
                 this.frameCounter++;
                 
-                // ENHANCED PHONEME DETECTION: Use hybrid system
-                const detectedPhoneme = this.getEnhancedPhoneme();
+                // Simple phoneme detection
+                const detectedPhoneme = this.detectBasicPhoneme(this.dataArray);
                 
-                // Add to history for anticipatory timing (1-2 frames early)
-                this.phonemeHistory.push({
-                    phoneme: detectedPhoneme,
-                    frame: this.frameCounter,
-                    timestamp: Date.now()
-                });
-                
-                // Keep only recent history (last 10 frames)
-                if (this.phonemeHistory.length > 10) {
-                    this.phonemeHistory.shift();
-                }
-                
-                // Apply anticipatory timing - use phoneme from 2 frames ago
-                let phonemeToApply = detectedPhoneme;
-                if (this.phonemeHistory.length >= this.anticipationFrames) {
-                    const anticipatedIndex = this.phonemeHistory.length - this.anticipationFrames;
-                    phonemeToApply = this.phonemeHistory[anticipatedIndex].phoneme;
-                }
-                
-                // Professional core shape prioritization (60-70% rule)
-                this.totalShapeUsage++;
-                if (this.coreShapes.includes(phonemeToApply)) {
-                    this.coreShapeUsage++;
-                }
-                
-                // IMPROVED TIMING: Add minimum hold time and debouncing
+                // Apply timing and smoothing
                 const currentTime = Date.now();
                 const timeSinceLastChange = currentTime - (this.lastChangeTime || 0);
-                const minimumHoldTime = 150; // Reduced from 200ms to 150ms for better responsiveness
+                const minimumHoldTime = 100;
                 
-                // Only update if phoneme changed AND enough time has passed
-                if (phonemeToApply !== this.lastPhoneme && timeSinceLastChange > minimumHoldTime) {
-                    // Track detected phonemes
-                    this.detectedPhonemes.add(phonemeToApply);
-                    
-                    // Calculate core shape usage percentage
-                    const corePercentage = Math.round((this.coreShapeUsage / this.totalShapeUsage) * 100);
-                    
-                    // Enhanced debug display with professional metrics
-                    const audioStatus = document.getElementById('audioStatus');
-                    if (audioStatus && audioStatus.style.display !== 'none') {
-                        const phonemeList = Array.from(this.detectedPhonemes).join(', ');
-                        const detectionMode = this.useSpeechRecognition ? 'Speech-to-Text' : 'Frequency Analysis';
-                        audioStatus.textContent = `🎤 ${detectionMode} Lip Sync - Current: ${phonemeToApply} | Core Usage: ${corePercentage}% | Detected: (${this.detectedPhonemes.size}/12) ${phonemeList}`;
-                    }
-                    
-                    // SMOOTH TRANSITION DURATIONS for visible morphing
-                    let duration = 0.25; // Base duration for smooth morphing
-                    
-                    // Professional hold timing for different phoneme types
-                    if (['closed', 't', 'k'].includes(phonemeToApply)) {
-                        duration = 0.35; // Longer for plosives to see the mouth position
-                    }
-                    
-                    // Vowels get medium duration
-                    if (['open', 'ee', 'oh', 'oo'].includes(phonemeToApply)) {
-                        duration = 0.3; // Medium duration for vowels
-                    }
-                    
-                    // Fricatives need shorter duration for rapid articulation
-                    if (['s', 'fv', 'th'].includes(phonemeToApply)) {
-                        duration = 0.2; // Faster for fricatives
-                    }
-                    
-                    // Stylized exaggeration for cartoon appeal
-                    let scaleMultiplier = 1.0;
-                    if (['open', 'ee', 'oh'].includes(phonemeToApply)) {
-                        scaleMultiplier = 1.15; // 15% larger for expressive vowels
-                    }
-                    
-                    console.log(`Enhanced audio calling updateMouthForPhoneme with: ${phonemeToApply}, duration: ${duration}, scale: ${scaleMultiplier}, mode: ${this.useSpeechRecognition ? 'Speech' : 'Frequency'}`);
-                    
-                    // Call the expression system's mouth shape update method directly
+                if (detectedPhoneme !== this.lastPhoneme && timeSinceLastChange > minimumHoldTime) {
                     if (expressionSystem && expressionSystem.updateMouthForPhoneme) {
-                        expressionSystem.updateMouthForPhoneme(phonemeToApply, duration, scaleMultiplier);
-                        
-                        // Secondary facial animations
-                        if (expressionSystem.addSecondaryAnimations) {
-                            expressionSystem.addSecondaryAnimations(phonemeToApply);
-                        }
-                    } else {
-                        console.warn('Expression system or updateMouthForPhoneme method not available');
+                        expressionSystem.updateMouthForPhoneme(detectedPhoneme, 0.3, 1.0);
                     }
                     
-                    this.lastPhoneme = phonemeToApply;
-                    this.lastChangeTime = currentTime; // Track when we last changed
+                    this.lastPhoneme = detectedPhoneme;
+                    this.lastChangeTime = currentTime;
                 }
                 
-                // High frequency processing for real-time feel
                 requestAnimationFrame(() => this.processAudio());
             }
             
-            detectPhoneme(frequencyData) {
-                // ENHANCED CARTOON-OPTIMIZED PHONEME DETECTION
-                // Professional frequency analysis with temporal smoothing and prediction
-                const sampleRate = this.audioContext.sampleRate;
-                const binSize = sampleRate / this.analyser.fftSize;
-                
-                // Enhanced frequency band analysis (more precise ranges)
-                let veryHighEnergy = 0;    // 4000+ Hz - sharp sibilants (s, sh)
-                let highEnergy = 0;        // 2000-4000 Hz - fricatives (f, th)
-                let upperMidEnergy = 0;    // 1000-2000 Hz - vowel formants
-                let midEnergy = 0;         // 400-1000 Hz - fundamental vowel frequencies
-                let lowMidEnergy = 0;      // 150-400 Hz - voiced consonants
-                let lowEnergy = 0;         // 80-150 Hz - vocal cord vibration
+            detectBasicPhoneme(frequencyData) {
+                // Basic frequency analysis for phoneme detection
                 let totalEnergy = 0;
+                let highEnergy = 0;
+                let midEnergy = 0;
+                let lowEnergy = 0;
                 
                 for (let i = 0; i < frequencyData.length; i++) {
-                    const frequency = i * binSize;
                     const amplitude = frequencyData[i] / 255.0;
-                    
                     totalEnergy += amplitude;
                     
-                    if (frequency >= 4000) {
-                        veryHighEnergy += amplitude;
-                    } else if (frequency >= 2000) {
+                    if (i > frequencyData.length * 0.7) {
                         highEnergy += amplitude;
-                    } else if (frequency >= 1000) {
-                        upperMidEnergy += amplitude;
-                    } else if (frequency >= 400) {
+                    } else if (i > frequencyData.length * 0.3) {
                         midEnergy += amplitude;
-                    } else if (frequency >= 150) {
-                        lowMidEnergy += amplitude;
-                    } else if (frequency >= 80) {
+                    } else {
                         lowEnergy += amplitude;
                     }
                 }
                 
-                // Normalize energies by frequency band size
-                const numBins = frequencyData.length;
-                veryHighEnergy = veryHighEnergy / (numBins * 0.2); // Fewer high freq bins
-                highEnergy = highEnergy / (numBins * 0.25);
-                upperMidEnergy = upperMidEnergy / (numBins * 0.25);
-                midEnergy = midEnergy / (numBins * 0.3);
-                lowMidEnergy = lowMidEnergy / (numBins * 0.3);
-                lowEnergy = lowEnergy / (numBins * 0.35);
-                totalEnergy /= numBins;
+                totalEnergy /= frequencyData.length;
                 
-                // TEMPORAL SMOOTHING: Add history for stability
-                if (!this.energyHistory) {
-                    this.energyHistory = [];
-                }
-                
-                this.energyHistory.push({
-                    total: totalEnergy,
-                    veryHigh: veryHighEnergy,
-                    high: highEnergy,
-                    upperMid: upperMidEnergy,
-                    mid: midEnergy,
-                    lowMid: lowMidEnergy,
-                    low: lowEnergy,
-                    timestamp: Date.now()
-                });
-                
-                // Keep only last 5 frames for smoothing
-                if (this.energyHistory.length > 5) {
-                    this.energyHistory.shift();
-                }
-                
-                // Calculate smoothed averages
-                const smoothed = {
-                    total: this.energyHistory.reduce((sum, frame) => sum + frame.total, 0) / this.energyHistory.length,
-                    veryHigh: this.energyHistory.reduce((sum, frame) => sum + frame.veryHigh, 0) / this.energyHistory.length,
-                    high: this.energyHistory.reduce((sum, frame) => sum + frame.high, 0) / this.energyHistory.length,
-                    upperMid: this.energyHistory.reduce((sum, frame) => sum + frame.upperMid, 0) / this.energyHistory.length,
-                    mid: this.energyHistory.reduce((sum, frame) => sum + frame.mid, 0) / this.energyHistory.length,
-                    lowMid: this.energyHistory.reduce((sum, frame) => sum + frame.lowMid, 0) / this.energyHistory.length,
-                    low: this.energyHistory.reduce((sum, frame) => sum + frame.low, 0) / this.energyHistory.length
-                };
-                
-                // SILENCE DETECTION: More sophisticated
-                if (smoothed.total < 0.06 || (smoothed.high < 0.05 && smoothed.mid < 0.05 && smoothed.low < 0.05)) {
+                if (totalEnergy < 0.05) {
                     return 'rest';
                 }
                 
-                // ENHANCED PHONEME CLASSIFICATION
-                // Professional linguistic rules based on acoustic phonetics
-                
-                // 1. SIBILANTS: Sharp, high-frequency noise
-                if (smoothed.veryHigh > 0.15 && smoothed.high > 0.2) {
-                    if (smoothed.veryHigh > 0.25) {
-                        return 's'; // Strong sibilants (s, z, sh, zh)
-                    } else {
-                        return 's'; // Weaker sibilants, still use S shape
-                    }
-                }
-                
-                // 2. FRICATIVES: Mid-high frequency noise
-                if (smoothed.high > 0.18 && smoothed.upperMid > 0.15) {
-                    if (smoothed.upperMid > smoothed.mid) {
-                        return 'fv'; // Labiodental fricatives (f, v)
-                    } else {
-                        return 'th'; // Dental fricatives (th)
-                    }
-                }
-                
-                // 3. VOWEL CLASSIFICATION: Based on formant patterns
-                if (smoothed.mid > 0.25 || smoothed.upperMid > 0.2) {
-                    // F1/F2 frequency relationship determines vowel type
-                    const f1Energy = smoothed.mid; // First formant (jaw height)
-                    const f2Energy = smoothed.upperMid; // Second formant (tongue position)
-                    
-                    if (f2Energy > f1Energy) {
-                        // High F2 = front vowels
-                        if (f1Energy < 0.3) {
-                            return 'ee'; // High front vowels (i, e)
-                        } else {
-                            return 'open'; // Mid-low front vowels (ae, a)
-                        }
-                    } else {
-                        // Low F2 = back vowels
-                        if (f1Energy < 0.35) {
-                            return 'oo'; // High back vowels (u, o)
-                        } else {
-                            return 'oh'; // Mid-low back vowels (aw, ah)
-                        }
-                    }
-                }
-                
-                // 4. CONSONANT CLASSIFICATION: Based on voicing and place
-                if (smoothed.lowMid > 0.2 || smoothed.low > 0.15) {
-                    const voicing = smoothed.low; // Fundamental frequency indicates voicing
-                    const articulation = smoothed.lowMid; // Mid frequencies show place of articulation
-                    
-                    if (articulation > voicing * 1.5) {
-                        // Strong articulation = alveolar consonants
-                        return Math.random() > 0.5 ? 't' : 'l'; // t/d/n or l/r
-                    } else if (voicing > 0.2) {
-                        // Strong voicing = bilabial or velar
-                        return Math.random() > 0.5 ? 'closed' : 'k'; // m/b/p or k/g/ng
-                    } else {
-                        return 'l'; // Liquids and approximants
-                    }
-                }
-                
-                // 5. DYNAMIC FALLBACK: Use recent history for context
-                if (this.phonemeHistory && this.phonemeHistory.length > 2) {
-                    const recentPhonemes = this.phonemeHistory.slice(-3).map(h => h.phoneme);
-                    
-                    // If recent vowels, likely continuing vowel
-                    if (recentPhonemes.some(p => ['open', 'ee', 'oh', 'oo'].includes(p))) {
-                        const vowelOptions = ['open', 'ee', 'oh', 'oo'];
-                        return vowelOptions[Math.floor(Math.random() * vowelOptions.length)];
-                    }
-                    
-                    // If recent consonants, likely continuing consonant
-                    if (recentPhonemes.some(p => ['closed', 't', 'k', 'l', 's', 'fv'].includes(p))) {
-                        const consonantOptions = ['closed', 't', 'l'];
-                        return consonantOptions[Math.floor(Math.random() * consonantOptions.length)];
-                    }
-                }
-                
-                // 6. FINAL FALLBACK: Expressive default based on energy
-                if (smoothed.total > 0.12) {
-                    // Moderate energy - cycle through most expressive visemes
-                    const expressiveVisemes = ['open', 'oh', 'ee'];
-                    const index = Math.floor((smoothed.total * 25 + Date.now() / 1500) % expressiveVisemes.length);
-                    return expressiveVisemes[index];
-                }
-                
-                // Very low energy
-                return 'rest';
-            }
-            
-            updateMouthShape(phoneme) {
-                if (expressionSystem && expressionSystem.phonemeMouths[phoneme]) {
-                    const mouthShape = expressionSystem.phonemeMouths[phoneme];
-                    
-                    // Track detected phonemes
-                    this.detectedPhonemes.add(phoneme);
-                    
-                    // Enhanced debug display with more info
-                    const audioStatus = document.getElementById('audioStatus');
-                    if (audioStatus && audioStatus.style.display !== 'none') {
-                        const phonemeList = Array.from(this.detectedPhonemes).join(', ');
-                        audioStatus.textContent = `🎤 Audio Lip Sync Active - Current: ${phoneme} | Detected: (${this.detectedPhonemes.size}/12) ${phonemeList}`;
-                    }
-                    
-                    // Fast mouth animation - no complex timeline
-                    gsap.to(expressionSystem.mouth, {
-                        duration: 0.1, // Very fast for real-time feel
-                        attr: {
-                            cx: mouthShape.cx,
-                            cy: mouthShape.cy,
-                            rx: mouthShape.rx,
-                            ry: mouthShape.ry
-                        },
-                        ease: "none" // No easing for maximum speed
-                    });
+                if (highEnergy > midEnergy) {
+                    return 's'; // High frequency sounds
+                } else if (midEnergy > lowEnergy) {
+                    return Math.random() > 0.5 ? 'ee' : 'open'; // Mid frequency vowels
+                } else {
+                    return Math.random() > 0.5 ? 'oh' : 'closed'; // Low frequency sounds
                 }
             }
             
@@ -2200,17 +2088,532 @@
                     this.audioContext.close();
                 }
                 
-                // Stop speech recognition
                 if (this.speechRecognition && this.useSpeechRecognition) {
                     try {
                         this.speechRecognition.stop();
-                        console.log('Speech recognition stopped');
                     } catch (error) {
                         console.warn('Error stopping speech recognition:', error);
                     }
                 }
+                audioStatus.style.display = 'none';
+            }
+        }
+
+        // VISEME TESTING FUNCTIONS
+        function testViseme(phoneme) {
+            if (expressionSystem && expressionSystem.updateMouthForPhoneme) {
+                console.log(`Testing viseme: ${phoneme}`);
+                expressionSystem.updateMouthForPhoneme(phoneme, 0.8, 1.2); // Longer duration for testing
                 
-                console.log('Audio processing stopped');
+                // Update UI feedback
+                const buttons = document.querySelectorAll('[onclick*="testViseme"]');
+                buttons.forEach(btn => btn.style.transform = 'scale(1)');
+                event.target.style.transform = 'scale(0.95)';
+                setTimeout(() => event.target.style.transform = 'scale(1)', 200);
+            } else {
+                console.warn('Expression system not ready for viseme testing');
+            }
+        }
+
+        function testSmoothSequence() {
+            if (!expressionSystem) {
+                console.warn('Expression system not ready');
+                return;
+            }
+            
+            console.log('Starting smooth viseme sequence test...');
+            
+            // Test sequence that should show smooth blended transitions
+            const sequence = [
+                { viseme: 'rest', delay: 0 },
+                { viseme: 'open', delay: 800 },    // Should blend through semiopen
+                { viseme: 'ee', delay: 1600 },     // Should blend through ay
+                { viseme: 'oo', delay: 2400 },     // Should blend through oh
+                { viseme: 'closed', delay: 3200 }, // Should blend through w
+                { viseme: 's', delay: 4000 },      // Should blend through th
+                { viseme: 'rest', delay: 4800 }    // Should blend through semiopen
+            ];
+            
+            sequence.forEach(step => {
+                setTimeout(() => {
+                    console.log(`Sequence step: ${step.viseme}`);
+                    expressionSystem.updateMouthForPhoneme(step.viseme, 0.6, 1.1);
+                }, step.delay);
+            });
+            
+            // Visual feedback
+            const button = event.target;
+            button.textContent = '🌊 Testing...';
+            button.disabled = true;
+            setTimeout(() => {
+                button.textContent = '🌊 Test Smooth Sequence';
+                button.disabled = false;
+            }, 5500);
+        }
+
+        function testWordExample() {
+            if (!expressionSystem) {
+                console.warn('Expression system not ready');
+                return;
+            }
+            
+            console.log('Testing "Hello World" with smooth transitions...');
+            
+            // "Hello World" phoneme sequence with realistic timing
+            const helloWorldSequence = [
+                { viseme: 'rest', delay: 0 },
+                { viseme: 'k', delay: 200 },     // H sound (velar fricative)
+                { viseme: 'uh', delay: 400 },    // E sound 
+                { viseme: 'l', delay: 600 },     // L sound
+                { viseme: 'oh', delay: 800 },    // O sound
+                { viseme: 'semiopen', delay: 1000 }, // Brief pause
+                { viseme: 'w', delay: 1200 },    // W sound
+                { viseme: 'aw', delay: 1400 },   // OR sound
+                { viseme: 'l', delay: 1600 },    // L sound
+                { viseme: 't', delay: 1800 },    // D sound
+                { viseme: 'rest', delay: 2000 }  // End
+            ];
+            
+            helloWorldSequence.forEach(step => {
+                setTimeout(() => {
+                    console.log(`Word step: ${step.viseme} (${step.delay}ms)`);
+                    expressionSystem.updateMouthForPhoneme(step.viseme, 0.4, 1.0);
+                }, step.delay);
+            });
+            
+            // Visual feedback
+            const button = event.target;
+            button.textContent = '📝 Speaking...';
+            button.disabled = true;
+            setTimeout(() => {
+                button.textContent = '📝 Test "Hello World"';
+                button.disabled = false;
+            }, 2500);
+        }
+        
+        // VOICE INTERACTION CONTROL FUNCTIONS
+        function startVoiceInteraction() {
+            if (!voiceInteractionSystem) {
+                alert('Voice interaction system not ready. Please refresh the page.');
+                return;
+            }
+            
+            // Start the voice interaction system
+            voiceInteractionSystem.start();
+            
+            // Show status
+            console.log('Voice interaction started from UI');
+            
+            // Visual feedback
+            const button = event.target;
+            button.textContent = '🎙️ Voice Chat Active';
+            button.style.background = '#2ecc71';
+        }
+        
+        function stopVoiceInteraction() {
+            if (!voiceInteractionSystem) {
+                console.warn('Voice interaction system not available');
+                return;
+            }
+            
+            // Stop the voice interaction system
+            voiceInteractionSystem.stop();
+            
+            // Reset button
+            const startButton = document.querySelector('[onclick="startVoiceInteraction()"]');
+            if (startButton) {
+                startButton.textContent = '🎙️ Start Voice Chat';
+                startButton.style.background = '#27ae60';
+            }
+            
+            console.log('Voice interaction stopped from UI');
+        }
+        
+        function testTTSWithAnimation() {
+            if (!voiceInteractionSystem) {
+                alert('Voice interaction system not ready. Please refresh the page.');
+                return;
+            }
+            
+            // Run the TTS animation test
+            voiceInteractionSystem.testTTSWithAnimation();
+            
+            // Visual feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '🧪 Testing...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            }, 8000); // Test takes about 8 seconds
+        }
+        
+        // COMPREHENSIVE VOICE INTERACTION SYSTEM
+        class VoiceInteractionSystem {
+            constructor() {
+                this.isActive = false;
+                this.isListening = false;
+                this.isSpeaking = false;
+                
+                // Voice input components
+                this.speechRecognition = null;
+                this.speechBuffer = '';
+                this.lastSpeechTime = 0;
+                
+                // TTS components
+                this.speechSynthesis = window.speechSynthesis;
+                this.currentVoice = null;
+                this.speechQueue = [];
+                
+                // Animation sync
+                this.currentTTSText = '';
+                this.ttsStartTime = 0;
+                this.ttsAnimationInterval = null;
+                
+                // Configuration
+                this.config = {
+                    voiceInput: false,
+                    aiResponse: false,
+                    ttsOutput: false,
+                    autoExpressions: true
+                };
+                
+                this.initialize();
+            }
+            
+            initialize() {
+                this.setupSpeechRecognition();
+                this.setupTTS();
+                this.loadVoices();
+                console.log('Voice Interaction System initialized');
+            }
+            
+            setupSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    this.speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    this.speechRecognition.continuous = true;
+                    this.speechRecognition.interimResults = false;
+                    this.speechRecognition.lang = 'en-US';
+                    
+                    this.speechRecognition.onstart = () => {
+                        this.isListening = true;
+                        this.updateStatus('🎤 Listening for your voice...');
+                        if (expressionSystem) expressionSystem.setExpression('awake');
+                    };
+                    
+                    this.speechRecognition.onresult = (event) => {
+                        this.processSpeechInput(event);
+                    };
+                    
+                    this.speechRecognition.onerror = (event) => {
+                        console.warn('Speech recognition error:', event.error);
+                        this.updateStatus(`❌ Speech error: ${event.error}`);
+                    };
+                    
+                    this.speechRecognition.onend = () => {
+                        this.isListening = false;
+                        if (this.isActive && this.config.voiceInput) {
+                            setTimeout(() => {
+                                if (this.isActive && !this.isSpeaking) {
+                                    this.speechRecognition.start();
+                                }
+                            }, 500);
+                        }
+                    };
+                } else {
+                    console.warn('Speech recognition not supported');
+                }
+            }
+            
+            setupTTS() {
+                if (this.speechSynthesis) {
+                    this.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                }
+            }
+            
+            loadVoices() {
+                const voices = this.speechSynthesis.getVoices();
+                const preferredVoices = ['Samantha', 'Alex', 'Google UK English Female'];
+                
+                for (const preferred of preferredVoices) {
+                    const voice = voices.find(v => v.name.includes(preferred));
+                    if (voice) {
+                        this.currentVoice = voice;
+                        break;
+                    }
+                }
+                
+                if (!this.currentVoice && voices.length > 0) {
+                    this.currentVoice = voices[0];
+                }
+            }
+            
+            processSpeechInput(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                if (finalTranscript.trim()) {
+                    this.speechBuffer = finalTranscript.trim();
+                    console.log(`Speech input: "${this.speechBuffer}"`);
+                    this.updateStatus(`💭 You said: "${this.speechBuffer}"`);
+                    this.processUserInput(this.speechBuffer);
+                }
+            }
+            
+            async processUserInput(userText) {
+                if (!userText.trim()) return;
+                
+                if (expressionSystem && this.config.autoExpressions) {
+                    expressionSystem.setExpression('thinking');
+                }
+                
+                this.updateStatus('🧠 Processing your request...');
+                
+                try {
+                    let response;
+                    if (this.config.aiResponse) {
+                        response = await this.getAIResponse(userText);
+                    } else {
+                        response = this.getLocalResponse(userText);
+                    }
+                    
+                    if (response) {
+                        if (this.config.autoExpressions) {
+                            this.setExpressionFromText(response);
+                        }
+                        
+                        if (this.config.ttsOutput) {
+                            await this.speakWithAnimation(response);
+                        } else {
+                            this.updateStatus(`💬 Response: "${response}"`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing input:', error);
+                    this.updateStatus(`❌ Error: ${error.message}`);
+                    if (expressionSystem) expressionSystem.setExpression('confused');
+                }
+            }
+            
+            async getAIResponse(userText) {
+                try {
+                    const response = await fetch('/api/command/' + encodeURIComponent(userText));
+                    const data = await response.json();
+                    
+                    if (data.success && data.response) {
+                        return data.response;
+                    } else {
+                        throw new Error(data.error || 'No response from AI');
+                    }
+                } catch (error) {
+                    return this.getLocalResponse(userText);
+                }
+            }
+            
+            getLocalResponse(userText) {
+                const text = userText.toLowerCase();
+                
+                if (text.includes('hello') || text.includes('hi')) {
+                    return "Hello! It's wonderful to see you. How can I help you today?";
+                }
+                if (text.includes('how are you')) {
+                    return "I'm doing great, thank you for asking! I'm excited to chat with you.";
+                }
+                if (text.includes('time')) {
+                    return `The current time is ${new Date().toLocaleTimeString()}.`;
+                }
+                if (text.includes('thank')) {
+                    return "You're very welcome! I'm always happy to help.";
+                }
+                if (text.includes('bye')) {
+                    return "Goodbye! It was lovely talking with you. Take care!";
+                }
+                
+                return `That's interesting. You said: "${userText}". I'm thinking about how to help you.`;
+            }
+            
+            setExpressionFromText(text) {
+                if (!expressionSystem) return;
+                
+                const sentimentResult = expressionSystem.analyzeSentiment(text);
+                if (sentimentResult && sentimentResult.emotion) {
+                    expressionSystem.setExpression(sentimentResult.emotion);
+                } else {
+                    const textLower = text.toLowerCase();
+                    if (textLower.includes('wonderful') || textLower.includes('great')) {
+                        expressionSystem.setExpression('happy');
+                    } else if (textLower.includes('sorry')) {
+                        expressionSystem.setExpression('concerned');
+                    } else {
+                        expressionSystem.setExpression('speaking');
+                    }
+                }
+            }
+            
+            async speakWithAnimation(text) {
+                return new Promise((resolve) => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = this.currentVoice;
+                    utterance.rate = 0.9;
+                    utterance.volume = 0.8;
+                    
+                    this.isSpeaking = true;
+                    
+                    // Start lip sync animation
+                    if (expressionSystem) {
+                        this.startTTSAnimation(text);
+                    }
+                    
+                    utterance.onstart = () => {
+                        this.updateStatus(`🗣️ Speaking: "${text}"`);
+                    };
+                    
+                    utterance.onend = () => {
+                        this.isSpeaking = false;
+                        this.stopTTSAnimation();
+                        if (expressionSystem) expressionSystem.setExpression('idle');
+                        this.updateStatus('✅ Ready for next input');
+                        resolve();
+                    };
+                    
+                    utterance.onerror = (error) => {
+                        this.isSpeaking = false;
+                        this.stopTTSAnimation();
+                        this.updateStatus(`❌ TTS error: ${error.error}`);
+                        resolve();
+                    };
+                    
+                    this.speechSynthesis.speak(utterance);
+                });
+            }
+            
+            startTTSAnimation(text) {
+                if (!expressionSystem || !expressionSystem.updateMouthForPhoneme) return;
+                
+                const phonemes = this.textToPhonemeSequence(text);
+                let phonemeIndex = 0;
+                const avgPhonemeTime = 150;
+                
+                this.ttsAnimationInterval = setInterval(() => {
+                    if (phonemeIndex < phonemes.length && this.isSpeaking) {
+                        const phoneme = phonemes[phonemeIndex];
+                        expressionSystem.updateMouthForPhoneme(phoneme, 0.3, 1.0);
+                        phonemeIndex++;
+                    } else {
+                        this.stopTTSAnimation();
+                    }
+                }, avgPhonemeTime);
+            }
+            
+            stopTTSAnimation() {
+                if (this.ttsAnimationInterval) {
+                    clearInterval(this.ttsAnimationInterval);
+                    this.ttsAnimationInterval = null;
+                }
+                if (expressionSystem && expressionSystem.updateMouthForPhoneme) {
+                    expressionSystem.updateMouthForPhoneme('rest', 0.3, 1.0);
+                }
+            }
+            
+            textToPhonemeSequence(text) {
+                const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
+                const phonemes = [];
+                
+                const wordPhonemes = {
+                    'hello': ['k', 'uh', 'l', 'oh'],
+                    'hi': ['k', 'open'],
+                    'wonderful': ['w', 'uh', 't', 'fv', 'oo', 'l'],
+                    'thank': ['th', 'ay', 'k'],
+                    'you': ['oo'],
+                    'great': ['k', 'ay', 't']
+                };
+                
+                for (const word of words) {
+                    if (wordPhonemes[word]) {
+                        phonemes.push(...wordPhonemes[word]);
+                    } else {
+                        // Simple fallback
+                        for (const char of word) {
+                            if ('aeiou'.includes(char)) {
+                                phonemes.push(char === 'a' ? 'open' : 'oh');
+                            } else {
+                                phonemes.push('closed');
+                            }
+                        }
+                    }
+                    phonemes.push('rest');
+                }
+                
+                return phonemes;
+            }
+            
+            updateStatus(message) {
+                const statusElement = document.getElementById('voiceInteractionStatus');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                }
+                console.log(`Voice Interaction: ${message}`);
+            }
+            
+            start() {
+                this.isActive = true;
+                this.updateStatus('🚀 Voice interaction started');
+                
+                if (this.config.voiceInput && this.speechRecognition) {
+                    try {
+                        this.speechRecognition.start();
+                    } catch (error) {
+                        this.updateStatus('❌ Could not start speech recognition');
+                    }
+                }
+            }
+            
+            stop() {
+                this.isActive = false;
+                this.isListening = false;
+                
+                if (this.speechRecognition) {
+                    try {
+                        this.speechRecognition.stop();
+                    } catch (error) {
+                        console.warn('Error stopping speech:', error);
+                    }
+                }
+                
+                if (this.speechSynthesis) {
+                    this.speechSynthesis.cancel();
+                }
+                
+                this.isSpeaking = false;
+                this.stopTTSAnimation();
+                
+                if (expressionSystem) expressionSystem.setExpression('idle');
+                this.updateStatus('⏹️ Voice interaction stopped');
+            }
+            
+            updateConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+                console.log('Config updated:', this.config);
+            }
+            
+            async testTTSWithAnimation() {
+                const testTexts = [
+                    "Hello! This is a test of text-to-speech with facial animation.",
+                    "Watch my mouth move as I speak different words and sounds."
+                ];
+                
+                for (const text of testTexts) {
+                    this.setExpressionFromText(text);
+                    await this.speakWithAnimation(text);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                this.updateStatus('✅ TTS test completed');
             }
         }
         
@@ -2231,6 +2634,11 @@
             audioProcessor = new RealTimeAudioProcessor();
             
             console.log('Audio processor created:', !!audioProcessor);
+            
+            // Initialize voice interaction system
+            voiceInteractionSystem = new VoiceInteractionSystem();
+            
+            console.log('Voice interaction system created:', !!voiceInteractionSystem);
             
             setupEventListeners();
             
@@ -2328,13 +2736,42 @@
                 }
             });
             
+            // Voice Interaction System Event Listeners
+            document.getElementById('voiceInputToggle').addEventListener('change', function() {
+                if (voiceInteractionSystem) {
+                    voiceInteractionSystem.updateConfig({ voiceInput: this.checked });
+                    console.log('Voice input toggled:', this.checked);
+                }
+            });
+            
+            document.getElementById('aiResponseToggle').addEventListener('change', function() {
+                if (voiceInteractionSystem) {
+                    voiceInteractionSystem.updateConfig({ aiResponse: this.checked });
+                    console.log('AI response toggled:', this.checked);
+                }
+            });
+            
+            document.getElementById('ttsOutputToggle').addEventListener('change', function() {
+                if (voiceInteractionSystem) {
+                    voiceInteractionSystem.updateConfig({ ttsOutput: this.checked });
+                    console.log('TTS output toggled:', this.checked);
+                }
+            });
+            
+            document.getElementById('autoExpressionsToggle').addEventListener('change', function() {
+                if (voiceInteractionSystem) {
+                    voiceInteractionSystem.updateConfig({ autoExpressions: this.checked });
+                    console.log('Auto expressions toggled:', this.checked);
+                }
+            });
+            
             document.getElementById('textInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     analyzeText();
                 }
             });
         }
-        
+
         function setEmotion(emotion) {
             // Update active button
             document.querySelectorAll('.emotion-btn').forEach(btn => btn.classList.remove('active'));
@@ -2420,39 +2857,14 @@
             }, 500);
         }
 
-        function demoExpressions() {
-            const emotions = ['happy', 'amazed', 'confused', 'determined', 'surprised', 'ecstatic', 'thinking', 'neutral'];
-            let index = 0;
-            
-            const cycle = () => {
-                expressionSystem.setExpression(emotions[index]);
-                index = (index + 1) % emotions.length;
-                
-                setTimeout(cycle, 2500);
-            };
-            
-            cycle();
-        }
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.altKey) {
-                switch(e.key) {
-                    case '1': setEmotion('neutral'); break;
-                    case '2': setEmotion('happy'); break;
-                    case '3': setEmotion('sad'); break;
-                    case '4': setEmotion('surprised'); break;
-                    case '5': setEmotion('thinking'); break;
-                    case '6': setEmotion('speaking'); break;
-                    case '7': setEmotion('confused'); break;
-                    case '8': setEmotion('determined'); break;
-                    case '9': setEmotion('concerned'); break;
-                    case '0': setEmotion('amazed'); break;
-                    case 'q': setEmotion('skeptical'); break;
-                    case 'w': setEmotion('ecstatic'); break;
-                }
+        function toggleAudioDebug() {
+            const audioStatus = document.getElementById('audioStatus');
+            if (audioStatus.style.display === 'none') {
+                audioStatus.style.display = 'block';
+            } else {
+                audioStatus.style.display = 'none';
             }
-        });
+        }
 
         function testSVGMouth() {
             console.log('=== Testing Parametric Mouth System ===');
@@ -2482,13 +2894,6 @@
                 cycleNextMouth();
             } else {
                 console.error('Expression system not found');
-            }
-            
-            if (audioProcessor) {
-                console.log('SVG cache size:', audioProcessor.svgCache.size);
-                console.log('Cached SVGs:', Array.from(audioProcessor.svgCache.keys()));
-            } else {
-                console.error('Audio processor not found');
             }
         }
     </script>
