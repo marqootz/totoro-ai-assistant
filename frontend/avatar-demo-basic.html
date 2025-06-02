@@ -275,12 +275,18 @@
 
         .status-indicator {
             text-align: center;
-            padding: 10px;
+            padding: 20px;
             margin-bottom: 20px;
             border-radius: 8px;
             background: #27ae60;
             color: white;
             font-weight: 600;
+            height: 140px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .api-status {
@@ -334,6 +340,7 @@
             <button class="control-button emotion-btn" onclick="setEmotion('amazed')">🤩 Amazed</button>
             <button class="control-button emotion-btn" onclick="setEmotion('skeptical')">🤨 Skeptical</button>
             <button class="control-button emotion-btn" onclick="setEmotion('ecstatic')">🥳 Ecstatic</button>
+            <button class="control-button emotion-btn" onclick="testSVGMouth()">🧪 Test Parametric Mouth</button>
         </div>
         
         <div class="settings-section">
@@ -363,6 +370,13 @@
                 <span>🎤 Real-time Audio Lip Sync</span>
                 <label class="toggle">
                     <input type="checkbox" id="audioLipSyncToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>🗣️ Speech-to-Text Mode (Enhanced Accuracy)</span>
+                <label class="toggle">
+                    <input type="checkbox" id="speechRecognitionToggle">
                     <span class="slider"></span>
                 </label>
             </div>
@@ -668,46 +682,119 @@
                     }
                 };
                 
-                // Enhanced phoneme mouth shapes for realistic speaking (OPTIMIZED FOR CARTOON ANIMATION)
-                // Based on Disney 12-viseme standard + industry best practices
-                // Now using professional SVG visemes from assets folder
-                this.phonemeMouths = {
-                    // 1. REST/NEUTRAL - Default position (keep ellipse for neutral)
-                    rest: { type: 'ellipse', cx: 200, cy: 180, rx: 18, ry: 3 },
+                // PARAMETRIC MOUTH SYSTEM - Single vector shape with full control
+                // Instead of multiple SVG files, use controllable parameters
+                this.mouthParameters = {
+                    // Base mouth position and size
+                    centerX: 200,
+                    centerY: 180,
                     
-                    // 2. CLOSED (Bilabials) - m, b, p (keep ellipse for closed lips)
-                    closed: { type: 'ellipse', cx: 200, cy: 180, rx: 20, ry: 2 },
+                    // Core shape controls
+                    width: 40,          // Overall mouth width
+                    height: 8,          // Overall mouth height (opening)
+                    curve: 0,           // Smile curve: -1 (frown) to +1 (smile)
+                    asymmetry: 0,       // Left/right asymmetry: -1 to +1
+                    lipThickness: 3,    // How thick the lips appear
                     
-                    // 3. OPEN (Ah sounds) - ah, aa, a
-                    open: { type: 'svg', file: 'assets/ah.svg', scale: 0.8, offsetX: 0, offsetY: 10 },
+                    // Advanced controls
+                    cornerHeight: 0,    // Corner elevation: -1 (down) to +1 (up)
+                    innerCurve: 0.5,    // Inner mouth curve intensity
+                    compression: 0,     // Horizontal compression for "oo" sounds
+                    stretch: 0,         // Vertical stretch for "ah" sounds
                     
-                    // 4. EE (High front vowels) - ee, i 
-                    ee: { type: 'svg', file: 'assets/e.svg', scale: 0.7, offsetX: 0, offsetY: 5 },
-                    
-                    // 5. OH (Mid back vowels) - oh, o
-                    oh: { type: 'svg', file: 'assets/oh.svg', scale: 0.8, offsetX: 0, offsetY: 8 },
-                    
-                    // 6. OO (Rounded vowels) - oo, u
-                    oo: { type: 'svg', file: 'assets/w-oo.svg', scale: 0.7, offsetX: 0, offsetY: 5 },
-                    
-                    // 7. S (Sibilants) - s, z, sh, ch
-                    s: { type: 'svg', file: 'assets/s.svg', scale: 0.8, offsetX: 0, offsetY: 0 },
-                    
-                    // 8. F/V (Labiodental) - f, v
-                    fv: { type: 'svg', file: 'assets/f.svg', scale: 0.8, offsetX: 0, offsetY: 5 },
-                    
-                    // 9. TH (Dental) - th (both voiced/unvoiced) - use F variation
-                    th: { type: 'svg', file: 'assets/f.svg', scale: 0.7, offsetX: 0, offsetY: 3 },
-                    
-                    // 10. L (Lateral) - l, r
-                    l: { type: 'svg', file: 'assets/l.svg', scale: 0.8, offsetX: 0, offsetY: 5 },
-                    
-                    // 11. K/G (Velar) - k, g, ng - use UH for back consonants
-                    k: { type: 'svg', file: 'assets/uh.svg', scale: 0.8, offsetX: 0, offsetY: 8 },
-                    
-                    // 12. T/D/N (Alveolar) - t, d, n
-                    t: { type: 'svg', file: 'assets/d.svg', scale: 0.8, offsetX: 0, offsetY: 5 }
+                    // Articulation details
+                    teethVisible: false,    // Show teeth line
+                    tongueVisible: false,   // Show tongue
+                    tonguePosition: 0.5,    // Tongue position 0-1
                 };
+                
+                // Enhanced phoneme definitions using parameters instead of SVG files
+                this.phonemeMouths = {
+                    // REST - Relaxed neutral mouth
+                    rest: {
+                        width: 30, height: 3, curve: 0, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0, compression: 0, stretch: 0
+                    },
+                    
+                    // CLOSED - Lips pressed together (m, b, p)
+                    closed: {
+                        width: 35, height: 1, curve: 0, asymmetry: 0,
+                        lipThickness: 4, cornerHeight: 0, compression: 0.2, stretch: 0
+                    },
+                    
+                    // OPEN - Wide open mouth (ah, aa, a)
+                    open: {
+                        width: 45, height: 20, curve: 0.2, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.1, compression: 0, stretch: 0.3,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.3
+                    },
+                    
+                    // EE - Wide smile shape (ee, i)
+                    ee: {
+                        width: 50, height: 8, curve: 0.6, asymmetry: 0,
+                        lipThickness: 1, cornerHeight: 0.3, compression: 0, stretch: -0.1,
+                        teethVisible: true
+                    },
+                    
+                    // OH - Rounded medium opening (oh, o)
+                    oh: {
+                        width: 35, height: 15, curve: 0.1, asymmetry: 0,
+                        lipThickness: 3, cornerHeight: 0, compression: 0.1, stretch: 0.1,
+                        tongueVisible: true, tonguePosition: 0.4
+                    },
+                    
+                    // OO - Small rounded opening (oo, u)
+                    oo: {
+                        width: 25, height: 12, curve: 0, asymmetry: 0,
+                        lipThickness: 4, cornerHeight: 0, compression: 0.4, stretch: 0,
+                        teethVisible: false
+                    },
+                    
+                    // S - Narrow gap for sibilants (s, z, sh)
+                    s: {
+                        width: 40, height: 6, curve: 0.1, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.1, compression: 0, stretch: -0.2,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.7
+                    },
+                    
+                    // FV - Lip to teeth contact (f, v)
+                    fv: {
+                        width: 35, height: 4, curve: -0.1, asymmetry: 0.1,
+                        lipThickness: 3, cornerHeight: -0.1, compression: 0.1, stretch: 0,
+                        teethVisible: true
+                    },
+                    
+                    // TH - Tongue between teeth (th)
+                    th: {
+                        width: 38, height: 5, curve: 0, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0, compression: 0, stretch: 0,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.8
+                    },
+                    
+                    // L - Lateral tongue position (l, r)
+                    l: {
+                        width: 40, height: 10, curve: 0.2, asymmetry: 0.1,
+                        lipThickness: 2, cornerHeight: 0.1, compression: 0, stretch: 0,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.6
+                    },
+                    
+                    // K - Back of tongue raised (k, g, ng)
+                    k: {
+                        width: 35, height: 8, curve: 0, asymmetry: 0,
+                        lipThickness: 3, cornerHeight: 0, compression: 0, stretch: 0.1,
+                        tongueVisible: true, tonguePosition: 0.2
+                    },
+                    
+                    // T - Tongue tip to alveolar ridge (t, d, n)
+                    t: {
+                        width: 38, height: 6, curve: 0.1, asymmetry: 0,
+                        lipThickness: 2, cornerHeight: 0.05, compression: 0, stretch: 0,
+                        teethVisible: true, tongueVisible: true, tonguePosition: 0.75
+                    }
+                };
+                
+                // Create the parametric mouth shape
+                this.createParametricMouth();
                 
                 // Generate current expressions with variations
                 this.generateExpressionVariations();
@@ -851,14 +938,15 @@
                 // Animate head morphing
                 const headMorphFunction = this.morphFunctions[this.currentEmotion]?.head?.[emotion];
                 if (headMorphFunction) {
+                    const headElement = this.head;
                     timeline.to({}, {
                         duration: duration / 1000 * 2,
                         ease: "cubic-bezier(0, 0, 0.58, 1)",
                         onUpdate: function() {
-                            const progress = this.progress();
+                            const progress = timeline.progress();
                             const newPath = headMorphFunction(progress);
-                            this.targets()[0].head.setAttribute('d', newPath);
-                        }.bind({head: this.head})
+                            headElement.setAttribute('d', newPath);
+                        }
                     }, 0);
                 }
                 
@@ -1027,6 +1115,176 @@
                 };
             }
 
+            // PARAMETRIC MOUTH ANIMATION for real-time lip sync
+            updateMouthForPhoneme(phoneme, duration, scaleMultiplier) {
+                console.log(`Parametric mouth: ${phoneme}, duration: ${duration}, scale: ${scaleMultiplier}`);
+                
+                if (!this.phonemeMouths[phoneme]) {
+                    console.log(`No mouth parameters found for phoneme: ${phoneme}`);
+                    return;
+                }
+                
+                // Get base parameters for this phoneme
+                const baseParams = this.phonemeMouths[phoneme];
+                console.log(`Base parameters for ${phoneme}:`, baseParams);
+                
+                // Apply generative variations for organic feel
+                const variationParams = this.generateParametricVariation(phoneme, baseParams, scaleMultiplier);
+                
+                // Smooth transition to new mouth shape using GSAP
+                this.morphParametricMouth(variationParams, duration);
+                
+                // Add secondary facial animations for enhanced realism
+                this.addParametricSecondaryAnimations(phoneme, duration);
+            }
+
+            // GENERATIVE PARAMETRIC VARIATION SYSTEM
+            generateParametricVariation(phoneme, baseParams, scaleMultiplier) {
+                // Start with base parameters
+                const variation = { ...baseParams };
+                
+                // Apply scale multiplier to width and height
+                variation.width *= scaleMultiplier;
+                variation.height *= scaleMultiplier;
+                
+                // Add time-based organic variations (breathing, micro-movements)
+                const timeOffset = Date.now() / 2000; // Slow organic variation
+                const breathingFactor = Math.sin(timeOffset * 3) * 0.05; // 5% breathing variation
+                
+                // Phoneme-specific organic rules
+                switch(phoneme) {
+                    case 'open':
+                        // Open vowels: Add jaw drop variation
+                        variation.height *= (1 + breathingFactor * 2); // More pronounced breathing
+                        variation.stretch += Math.sin(timeOffset * 4) * 0.1;
+                        break;
+                        
+                    case 'ee':
+                        // Smile shape: Add corner elevation variation
+                        variation.cornerHeight += Math.cos(timeOffset * 5) * 0.1;
+                        variation.curve += Math.sin(timeOffset * 3) * 0.1;
+                        break;
+                        
+                    case 'oo':
+                        // Rounded: Add compression pulsing
+                        variation.compression += Math.sin(timeOffset * 6) * 0.1;
+                        variation.lipThickness *= (1 + breathingFactor);
+                        break;
+                        
+                    case 's':
+                        // Sibilants: Add micro-asymmetry
+                        variation.asymmetry += Math.sin(timeOffset * 8) * 0.05;
+                        break;
+                        
+                    case 'fv':
+                        // Fricatives: Add lip tension variation
+                        variation.lipThickness *= (1 + Math.cos(timeOffset * 7) * 0.2);
+                        variation.asymmetry += Math.sin(timeOffset * 4) * 0.1;
+                        break;
+                        
+                    default:
+                        // General organic variation
+                        variation.width *= (1 + breathingFactor * 0.5);
+                        variation.height *= (1 + breathingFactor * 0.3);
+                        break;
+                }
+                
+                // Add random micro-variations for ultra-realistic feel (30% chance)
+                if (Math.random() > 0.7) {
+                    variation.asymmetry += (Math.random() - 0.5) * 0.1;
+                    variation.cornerHeight += (Math.random() - 0.5) * 0.05;
+                    variation.curve += (Math.random() - 0.5) * 0.1;
+                }
+                
+                console.log(`Generated parametric variation for ${phoneme}:`, variation);
+                return variation;
+            }
+
+            // SMOOTH PARAMETRIC MORPHING
+            morphParametricMouth(targetParams, duration) {
+                if (!this.mouthGroup) {
+                    console.warn('Parametric mouth not initialized');
+                    return;
+                }
+                
+                // Create intermediate parameters for smooth interpolation
+                const startParams = { ...this.mouthParameters };
+                
+                // Use GSAP to smoothly interpolate between current and target parameters
+                gsap.to(this.mouthParameters, {
+                    duration: duration,
+                    width: targetParams.width,
+                    height: targetParams.height,
+                    curve: targetParams.curve,
+                    asymmetry: targetParams.asymmetry,
+                    lipThickness: targetParams.lipThickness,
+                    cornerHeight: targetParams.cornerHeight,
+                    compression: targetParams.compression,
+                    stretch: targetParams.stretch,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        // Update the mouth shape every frame during the transition
+                        this.updateParametricMouth(this.mouthParameters);
+                    },
+                    onComplete: () => {
+                        // Ensure final state is exact
+                        this.updateParametricMouth(targetParams);
+                        
+                        // Update teeth and tongue visibility
+                        if (targetParams.teethVisible !== undefined) {
+                            this.mouthParameters.teethVisible = targetParams.teethVisible;
+                        }
+                        if (targetParams.tongueVisible !== undefined) {
+                            this.mouthParameters.tongueVisible = targetParams.tongueVisible;
+                            this.mouthParameters.tonguePosition = targetParams.tonguePosition || 0.5;
+                        }
+                        this.updateParametricMouth(this.mouthParameters);
+                    }
+                });
+                
+                console.log(`Started parametric morph from [${startParams.width}x${startParams.height}] to [${targetParams.width}x${targetParams.height}]`);
+            }
+
+            // PARAMETRIC SECONDARY ANIMATIONS
+            addParametricSecondaryAnimations(phoneme, duration) {
+                // Enhanced facial coordination for different phoneme types
+                
+                // Nostril movement for nasal consonants
+                if (['closed', 't', 'k'].includes(phoneme)) {
+                    // Subtle nostril flare animation via eye movement
+                    gsap.to([this.leftEye, this.rightEye], {
+                        duration: duration * 0.3,
+                        attr: { cy: `+=${-0.5}` }, // Slight upward movement
+                        ease: "power2.out",
+                        yoyo: true,
+                        repeat: 1
+                    });
+                }
+                
+                // Eye dilation for vowel emphasis
+                if (['open', 'ee', 'oh', 'oo'].includes(phoneme)) {
+                    const currentRadius = parseInt(this.leftEye.getAttribute('r'));
+                    gsap.to([this.leftEye, this.rightEye], {
+                        duration: duration * 0.2,
+                        attr: { r: `+=${1}` }, // Slight dilation
+                        ease: "power2.out",
+                        yoyo: true,
+                        repeat: 1
+                    });
+                }
+                
+                // Subtle head movement for emphasis (20/80 rule - body mechanics)
+                if (['s', 'fv', 'th'].includes(phoneme)) {
+                    gsap.to(this.faceGroup, {
+                        duration: 0.15,
+                        rotation: Math.random() > 0.5 ? 0.5 : -0.5,
+                        ease: "power2.out",
+                        yoyo: true,
+                        repeat: 1
+                    });
+                }
+            }
+
             // Add phoneme animation for realistic speaking
             animatePhonemes(text) {
                 if (!text) return;
@@ -1157,247 +1415,175 @@
                 
                 return phonemes;
             }
-            
-            updateMouthShapeWithTiming(phoneme) {
-                if (expressionSystem && expressionSystem.phonemeMouths[phoneme]) {
-                    const mouthShape = expressionSystem.phonemeMouths[phoneme];
-                    
-                    // Track detected phonemes
-                    this.detectedPhonemes.add(phoneme);
-                    
-                    // Calculate core shape usage percentage
-                    const corePercentage = Math.round((this.coreShapeUsage / this.totalShapeUsage) * 100);
-                    
-                    // Enhanced debug display with professional metrics
-                    const audioStatus = document.getElementById('audioStatus');
-                    if (audioStatus && audioStatus.style.display !== 'none') {
-                        const phonemeList = Array.from(this.detectedPhonemes).join(', ');
-                        audioStatus.textContent = `🎤 Professional SVG Lip Sync - Current: ${phoneme} | Core Usage: ${corePercentage}% | Detected: (${this.detectedPhonemes.size}/12) ${phonemeList}`;
-                    }
-                    
-                    // Determine animation duration based on phoneme type
-                    let duration = 0.1; // Default fast animation
-                    
-                    // Professional hold timing for plosives (b, p, t, d, k, g)
-                    if (['closed', 't', 'k'].includes(phoneme)) {
-                        duration = 0.15; // Hold plosives longer (3 frames at 20fps)
-                    }
-                    
-                    // Stylized exaggeration for cartoon appeal
-                    let scaleMultiplier = 1.0;
-                    if (['open', 'ee', 'oh'].includes(phoneme)) {
-                        scaleMultiplier = 1.1; // 10% larger for expressive vowels
-                    }
-                    
-                    // Handle different mouth shape types
-                    if (mouthShape.type === 'svg') {
-                        // Try to load SVG immediately, fallback to ellipse if not ready
-                        const svgReady = this.loadSVGMouthSync(mouthShape, scaleMultiplier, duration);
-                        if (!svgReady) {
-                            // Immediate fallback for real-time performance
-                            this.showEllipseMouth();
-                            gsap.to(expressionSystem.mouth, {
-                                duration: duration,
-                                attr: { cx: 200, cy: 180, rx: 15 * scaleMultiplier, ry: 8 * scaleMultiplier },
-                                ease: "power2.out"
-                            });
-                        }
-                    } else {
-                        // Use ellipse for rest/closed positions - hide SVG mouth first
-                        this.showEllipseMouth();
-                        gsap.to(expressionSystem.mouth, {
-                            duration: duration,
-                            attr: {
-                                cx: mouthShape.cx,
-                                cy: mouthShape.cy,
-                                rx: mouthShape.rx * scaleMultiplier,
-                                ry: mouthShape.ry * scaleMultiplier
-                            },
-                            ease: "power2.out"
-                        });
-                    }
-                    
-                    // Secondary facial animations (Emotional Contextualization)
-                    this.addSecondaryAnimations(phoneme);
+
+            // PARAMETRIC MOUTH CREATION SYSTEM
+            createParametricMouth() {
+                // Remove the old ellipse mouth if it exists
+                if (this.mouth) {
+                    this.mouth.remove();
                 }
+                
+                // Create a group to hold all mouth elements
+                this.mouthGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                this.mouthGroup.setAttribute('id', 'parametric-mouth');
+                this.mouthGroup.style.transformOrigin = '200px 180px';
+                
+                // Main mouth shape (vector path)
+                this.mouthPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.mouthPath.setAttribute('fill', '#8B0000'); // Dark red mouth interior
+                this.mouthPath.setAttribute('stroke', '#4A0000');
+                this.mouthPath.setAttribute('stroke-width', '1');
+                this.mouthPath.setAttribute('id', 'mouth-shape');
+                
+                // Upper lip path
+                this.upperLip = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.upperLip.setAttribute('fill', '#000000');
+                this.upperLip.setAttribute('stroke', 'none');
+                this.upperLip.setAttribute('id', 'upper-lip');
+                
+                // Lower lip path  
+                this.lowerLip = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.lowerLip.setAttribute('fill', '#000000');
+                this.lowerLip.setAttribute('stroke', 'none');
+                this.lowerLip.setAttribute('id', 'lower-lip');
+                
+                // Teeth (optional, for open mouth positions)
+                this.teeth = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                this.teeth.setAttribute('fill', '#FFFFFF');
+                this.teeth.setAttribute('stroke', '#E0E0E0');
+                this.teeth.setAttribute('stroke-width', '0.5');
+                this.teeth.setAttribute('id', 'teeth');
+                this.teeth.style.display = 'none'; // Hidden by default
+                
+                // Tongue (optional, for certain phonemes)
+                this.tongue = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                this.tongue.setAttribute('fill', '#FF69B4'); // Pink tongue
+                this.tongue.setAttribute('stroke', 'none');
+                this.tongue.setAttribute('id', 'tongue');
+                this.tongue.style.display = 'none'; // Hidden by default
+                
+                // Assemble mouth group
+                this.mouthGroup.appendChild(this.mouthPath);
+                this.mouthGroup.appendChild(this.teeth);
+                this.mouthGroup.appendChild(this.tongue);
+                this.mouthGroup.appendChild(this.upperLip);
+                this.mouthGroup.appendChild(this.lowerLip);
+                
+                // Add to face
+                this.faceGroup.appendChild(this.mouthGroup);
+                
+                // Set initial mouth shape
+                this.updateParametricMouth(this.phonemeMouths.rest);
+                
+                console.log('Parametric mouth system created');
             }
-            
-            loadSVGMouthSync(mouthShape, scaleMultiplier, duration) {
-                // Synchronous loading from cache for real-time performance
-                const svgText = this.svgCache.get(mouthShape.file);
-                if (!svgText) {
-                    console.log(`SVG not cached yet: ${mouthShape.file}`);
-                    return false; // Not ready, use fallback
+
+            // UPDATE PARAMETRIC MOUTH SHAPE
+            updateParametricMouth(params) {
+                if (!this.mouthGroup) return;
+                
+                // Merge with current parameters
+                const currentParams = { ...this.mouthParameters, ...params };
+                
+                // Calculate derived values
+                const centerX = currentParams.centerX;
+                const centerY = currentParams.centerY;
+                const width = currentParams.width;
+                const height = currentParams.height;
+                const curve = currentParams.curve;
+                const asymmetry = currentParams.asymmetry;
+                const lipThickness = currentParams.lipThickness;
+                const cornerHeight = currentParams.cornerHeight;
+                const compression = currentParams.compression;
+                const stretch = currentParams.stretch;
+                
+                // Apply compression and stretch
+                const effectiveWidth = width * (1 - compression * 0.5);
+                const effectiveHeight = height * (1 + stretch * 0.5);
+                
+                // Calculate corner positions with asymmetry
+                const leftCornerX = centerX - effectiveWidth / 2;
+                const rightCornerX = centerX + effectiveWidth / 2;
+                const leftCornerY = centerY + (cornerHeight * 10) + (asymmetry * 3);
+                const rightCornerY = centerY + (cornerHeight * 10) - (asymmetry * 3);
+                
+                // Calculate control points for curves
+                const curveFactor = curve * effectiveWidth * 0.3;
+                const upperCurveY = centerY - effectiveHeight / 2 - curveFactor;
+                const lowerCurveY = centerY + effectiveHeight / 2 + curveFactor;
+                
+                // CREATE MAIN MOUTH PATH (interior)
+                if (effectiveHeight > 2) {
+                    // Open mouth - create interior shape
+                    const mouthPath = `
+                        M ${leftCornerX} ${leftCornerY}
+                        Q ${centerX} ${upperCurveY} ${rightCornerX} ${rightCornerY}
+                        Q ${centerX} ${lowerCurveY} ${leftCornerX} ${leftCornerY}
+                        Z
+                    `;
+                    this.mouthPath.setAttribute('d', mouthPath);
+                    this.mouthPath.style.display = 'block';
+                } else {
+                    // Closed mouth - hide interior
+                    this.mouthPath.style.display = 'none';
                 }
                 
-                try {
-                    // Parse SVG
-                    const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-                    const svgElement = svgDoc.documentElement;
-                    
-                    // Calculate position and scale
-                    const baseX = 200 + mouthShape.offsetX;
-                    const baseY = 180 + mouthShape.offsetY;
-                    const scale = mouthShape.scale * scaleMultiplier;
-                    
-                    // Remove old mouth (if exists)
-                    const oldMouth = expressionSystem.svg.querySelector('#current-mouth');
-                    if (oldMouth) {
-                        oldMouth.remove();
-                    }
-                    
-                    // Create new mouth group
-                    const mouthGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    mouthGroup.setAttribute('id', 'current-mouth');
-                    mouthGroup.setAttribute('transform', `translate(${baseX - 39.5}, ${baseY - 15}) scale(${scale})`);
-                    
-                    // Copy SVG content
-                    const svgContent = svgElement.querySelector('g');
-                    if (svgContent) {
-                        mouthGroup.appendChild(svgContent.cloneNode(true));
-                        
-                        // Hide ellipse mouth and show SVG
-                        expressionSystem.mouth.style.display = 'none';
-                        expressionSystem.svg.appendChild(mouthGroup);
-                        
-                        // Quick entrance animation for real-time feel
-                        gsap.from(mouthGroup, {
-                            duration: 0.05, // Very fast
-                            scale: 0.95,
-                            opacity: 0.7,
-                            ease: "power1.out"
-                        });
-                        
-                        return true; // Success
-                    }
-                } catch (error) {
-                    console.warn('Error displaying cached SVG:', error);
+                // CREATE LIP PATHS
+                const lipHalfThickness = lipThickness / 2;
+                
+                // Upper lip
+                const upperLipPath = `
+                    M ${leftCornerX} ${leftCornerY - lipHalfThickness}
+                    Q ${centerX} ${upperCurveY - lipHalfThickness} ${rightCornerX} ${rightCornerY - lipHalfThickness}
+                    Q ${centerX} ${upperCurveY + lipHalfThickness} ${leftCornerX} ${leftCornerY + lipHalfThickness}
+                    Z
+                `;
+                this.upperLip.setAttribute('d', upperLipPath);
+                
+                // Lower lip (only if mouth is not too closed)
+                if (effectiveHeight > 1) {
+                    const lowerLipPath = `
+                        M ${leftCornerX} ${leftCornerY + lipHalfThickness}
+                        Q ${centerX} ${lowerCurveY - lipHalfThickness} ${rightCornerX} ${rightCornerY + lipHalfThickness}
+                        Q ${centerX} ${lowerCurveY + lipHalfThickness} ${leftCornerX} ${leftCornerY + lipHalfThickness}
+                        Z
+                    `;
+                    this.lowerLip.setAttribute('d', lowerLipPath);
+                    this.lowerLip.style.display = 'block';
+                } else {
+                    this.lowerLip.style.display = 'none';
                 }
                 
-                return false; // Failed
-            }
-            
-            async loadSVGMouth(mouthShape, scaleMultiplier, duration) {
-                try {
-                    // Get SVG content from cache or fetch it
-                    let svgText = this.svgCache.get(mouthShape.file);
-                    if (!svgText) {
-                        console.log(`Loading SVG from network: ${mouthShape.file}`);
-                        const response = await fetch(mouthShape.file);
-                        svgText = await response.text();
-                        this.svgCache.set(mouthShape.file, svgText); // Cache for next time
-                    }
-                    
-                    // Parse SVG
-                    const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-                    const svgElement = svgDoc.documentElement;
-                    
-                    // Calculate position and scale
-                    const baseX = 200 + mouthShape.offsetX;
-                    const baseY = 180 + mouthShape.offsetY;
-                    const scale = mouthShape.scale * scaleMultiplier;
-                    
-                    // Remove old mouth (if exists)
-                    const oldMouth = expressionSystem.svg.querySelector('#current-mouth');
-                    if (oldMouth) {
-                        oldMouth.remove();
-                    }
-                    
-                    // Create new mouth group
-                    const mouthGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    mouthGroup.setAttribute('id', 'current-mouth');
-                    mouthGroup.setAttribute('transform', `translate(${baseX - 39.5}, ${baseY - 15}) scale(${scale})`);
-                    
-                    // Copy SVG content
-                    const svgContent = svgElement.querySelector('g');
-                    if (svgContent) {
-                        mouthGroup.appendChild(svgContent.cloneNode(true));
-                        
-                        // Hide ellipse mouth and show SVG
-                        expressionSystem.mouth.style.display = 'none';
-                        expressionSystem.svg.appendChild(mouthGroup);
-                        
-                        // Animate entrance (faster for real-time)
-                        gsap.from(mouthGroup, {
-                            duration: duration * 0.5, // Half duration for snappy feel
-                            scale: 0.9,
-                            opacity: 0,
-                            ease: "power2.out"
-                        });
-                    }
-                } catch (error) {
-                    console.warn('Failed to load SVG mouth:', mouthShape.file, error);
-                    // Fallback to ellipse
-                    this.showEllipseMouth();
-                    gsap.to(expressionSystem.mouth, {
-                        duration: duration,
-                        attr: { rx: 15, ry: 8 },
-                        ease: "power2.out"
-                    });
-                }
-            }
-            
-            showEllipseMouth() {
-                // Hide any SVG mouth
-                const oldMouth = expressionSystem.svg.querySelector('#current-mouth');
-                if (oldMouth) {
-                    gsap.to(oldMouth, {
-                        duration: 0.1,
-                        opacity: 0,
-                        onComplete: () => oldMouth.remove()
-                    });
+                // TEETH VISIBILITY
+                if (currentParams.teethVisible && effectiveHeight > 8) {
+                    const teethWidth = effectiveWidth * 0.8;
+                    const teethHeight = Math.min(effectiveHeight * 0.3, 6);
+                    this.teeth.setAttribute('x', centerX - teethWidth / 2);
+                    this.teeth.setAttribute('y', centerY - effectiveHeight / 2);
+                    this.teeth.setAttribute('width', teethWidth);
+                    this.teeth.setAttribute('height', teethHeight);
+                    this.teeth.style.display = 'block';
+                } else {
+                    this.teeth.style.display = 'none';
                 }
                 
-                // Show ellipse mouth
-                expressionSystem.mouth.style.display = 'block';
-            }
-            
-            addSecondaryAnimations(phoneme) {
-                if (!expressionSystem) return;
-                
-                // Cheek/nose movement for nasals (m, n, ng)
-                if (phoneme === 'closed' || phoneme === 't') {
-                    // Subtle nostril flare for nasal consonants
-                    gsap.to(expressionSystem.leftEye, {
-                        duration: 0.1,
-                        attr: { cy: expressionSystem.leftEye.getAttribute('cy') - 1 },
-                        ease: "power2.out",
-                        yoyo: true,
-                        repeat: 1
-                    });
-                    gsap.to(expressionSystem.rightEye, {
-                        duration: 0.1,
-                        attr: { cy: expressionSystem.rightEye.getAttribute('cy') - 1 },
-                        ease: "power2.out",
-                        yoyo: true,
-                        repeat: 1
-                    });
+                // TONGUE VISIBILITY
+                if (currentParams.tongueVisible && effectiveHeight > 5) {
+                    const tongueWidth = effectiveWidth * 0.6;
+                    const tongueHeight = Math.min(effectiveHeight * 0.4, 8);
+                    const tongueY = centerY + (currentParams.tonguePosition - 0.5) * effectiveHeight;
+                    
+                    this.tongue.setAttribute('cx', centerX);
+                    this.tongue.setAttribute('cy', tongueY);
+                    this.tongue.setAttribute('rx', tongueWidth / 2);
+                    this.tongue.setAttribute('ry', tongueHeight / 2);
+                    this.tongue.style.display = 'block';
+                } else {
+                    this.tongue.style.display = 'none';
                 }
                 
-                // Eye dilation for stressed vowels (emotional intensity)
-                if (['open', 'ee', 'oh'].includes(phoneme)) {
-                    const currentRadius = parseInt(expressionSystem.leftEye.getAttribute('r'));
-                    gsap.to([expressionSystem.leftEye, expressionSystem.rightEye], {
-                        duration: 0.08,
-                        attr: { r: currentRadius + 1 },
-                        ease: "power2.out",
-                        yoyo: true,
-                        repeat: 1
-                    });
-                }
-                
-                // Subtle head movement for emphasis (20/80 rule - body mechanics)
-                if (['s', 'fv', 'th'].includes(phoneme)) {
-                    gsap.to(expressionSystem.faceGroup, {
-                        duration: 0.15,
-                        rotation: Math.random() > 0.5 ? 0.5 : -0.5,
-                        ease: "power2.out",
-                        yoyo: true,
-                        repeat: 1
-                    });
-                }
+                // Store current parameters
+                this.mouthParameters = currentParams;
             }
         }
 
@@ -1424,6 +1610,9 @@
                 this.anticipationFrames = 2; // Place shapes 1-2 frames early
                 this.holdFrames = 3; // Hold plosives for 3 frames
                 
+                // Timing control for smoother transitions
+                this.lastChangeTime = 0; // Track when we last changed phonemes
+                
                 // Core 5 shapes for 60-70% coverage (Limited Articulation Principle)
                 this.coreShapes = ['rest', 'open', 'closed', 'ee', 'oh'];
                 this.coreShapeUsage = 0;
@@ -1432,6 +1621,15 @@
                 // SVG cache for faster loading
                 this.svgCache = new Map();
                 this.preloadSVGs();
+                
+                // SPEECH-TO-TEXT SYSTEM for enhanced phoneme detection
+                this.speechRecognition = null;
+                this.useSpeechRecognition = false; // Toggle between frequency analysis and speech recognition
+                this.speechBuffer = '';
+                this.speechPhonemeQueue = [];
+                this.lastSpeechUpdate = 0;
+                
+                this.initializeSpeechRecognition();
             }
             
             async preloadSVGs() {
@@ -1441,17 +1639,210 @@
                     'assets/s.svg', 'assets/f.svg', 'assets/l.svg', 'assets/d.svg', 'assets/uh.svg'
                 ];
                 
+                console.log('Starting SVG preload...');
+                
                 for (const file of svgFiles) {
                     try {
+                        console.log(`Loading ${file}...`);
                         const response = await fetch(file);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
                         const svgText = await response.text();
                         this.svgCache.set(file, svgText);
-                        console.log(`Preloaded: ${file}`);
+                        console.log(`✓ Preloaded: ${file} (${svgText.length} characters)`);
                     } catch (error) {
-                        console.warn(`Failed to preload: ${file}`, error);
+                        console.error(`✗ Failed to preload: ${file}`, error);
                     }
                 }
                 console.log(`SVG cache ready: ${this.svgCache.size} files loaded`);
+                console.log('Cached files:', Array.from(this.svgCache.keys()));
+            }
+            
+            // SPEECH-TO-TEXT ENHANCED PHONEME DETECTION
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    this.speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    this.speechRecognition.continuous = true;
+                    this.speechRecognition.interimResults = true;
+                    this.speechRecognition.lang = 'en-US';
+                    
+                    this.speechRecognition.onresult = (event) => {
+                        this.processSpeechResult(event);
+                    };
+                    
+                    this.speechRecognition.onerror = (event) => {
+                        console.warn('Speech recognition error:', event.error);
+                        // Fall back to frequency analysis
+                        this.useSpeechRecognition = false;
+                    };
+                    
+                    console.log('Speech recognition initialized');
+                } else {
+                    console.log('Speech recognition not supported, using frequency analysis only');
+                }
+            }
+            
+            processSpeechResult(event) {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                // Use interim results for real-time lip sync
+                const currentText = interimTranscript || finalTranscript;
+                if (currentText && currentText !== this.speechBuffer) {
+                    this.speechBuffer = currentText;
+                    
+                    // Convert text to phoneme sequence
+                    const phonemes = this.textToPhonemeSequence(currentText);
+                    this.speechPhonemeQueue = phonemes;
+                    this.lastSpeechUpdate = Date.now();
+                    
+                    console.log(`Speech detected: "${currentText}" -> [${phonemes.join(', ')}]`);
+                }
+            }
+            
+            textToPhonemeSequence(text) {
+                // ENHANCED PHONEME MAPPING with professional linguistic rules
+                // Based on Carnegie Mellon University Pronouncing Dictionary patterns
+                
+                const phoneticRules = {
+                    // Vowel patterns (most expressive for animation)
+                    'ee': 'ee', 'ea': 'ee', 'e_e': 'ee', 'i_e': 'ee', 'ie': 'ee',
+                    'ai': 'open', 'ay': 'open', 'a_e': 'open', 'ei': 'open',
+                    'aa': 'open', 'ah': 'open', 'a': 'open',
+                    'oo': 'oo', 'ou': 'oo', 'u_e': 'oo', 'ue': 'oo', 'ew': 'oo',
+                    'oh': 'oh', 'oa': 'oh', 'o_e': 'oh', 'ow': 'oh', 'oe': 'oh',
+                    'uh': 'oh', 'u': 'oh', 'o': 'oh',
+                    
+                    // Consonant clusters (place of articulation)
+                    'sh': 's', 'ch': 's', 'th': 'th', 'ph': 'fv', 'gh': 'fv',
+                    'ng': 'k', 'nk': 'k', 'ck': 'k',
+                    'mb': 'closed', 'mp': 'closed',
+                    'nd': 't', 'nt': 't', 'st': 's', 'sp': 'closed',
+                    
+                    // Individual consonants
+                    'b': 'closed', 'm': 'closed', 'p': 'closed', 'w': 'oo',
+                    'f': 'fv', 'v': 'fv',
+                    't': 't', 'd': 't', 'n': 't', 's': 's', 'z': 's',
+                    'l': 'l', 'r': 'l',
+                    'k': 'k', 'g': 'k', 'h': 'open',
+                    
+                    // Silent letters (don't generate phonemes)
+                    'silent': ['e$', 'gh$', 'mb$', 'kn^', 'wr^', 'ps^']
+                };
+                
+                // Word-level phoneme sequences for common words
+                const wordPhonemes = {
+                    'hello': ['k', 'open', 'l', 'oh'],
+                    'world': ['oo', 'l', 't'],
+                    'how': ['k', 'open', 'oo'],
+                    'are': ['open', 'l'],
+                    'you': ['oo'],
+                    'the': ['th', 'open'],
+                    'and': ['open', 't'],
+                    'this': ['th', 'ee', 's'],
+                    'that': ['th', 'open', 't'],
+                    'with': ['oo', 'ee', 'th'],
+                    'what': ['oo', 'open', 't'],
+                    'when': ['oo', 'open', 't'],
+                    'where': ['oo', 'open', 'l'],
+                    'good': ['k', 'oo', 't'],
+                    'great': ['k', 'ee', 't'],
+                    'nice': ['t', 'open', 's'],
+                    'fine': ['fv', 'open', 't'],
+                    'okay': ['oh', 'open'],
+                    'yes': ['ee', 's'],
+                    'no': ['t', 'oh'],
+                    'maybe': ['open', 'ee'],
+                    'sure': ['s', 'l'],
+                    'thanks': ['th', 'open', 'k', 's'],
+                    'please': ['fv', 'ee', 's'],
+                    'sorry': ['s', 'oh', 'ee'],
+                    'excuse': ['k', 's', 'oo', 's']
+                };
+                
+                const phonemes = [];
+                const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
+                
+                for (let word of words) {
+                    if (wordPhonemes[word]) {
+                        // Use pre-mapped high-quality phonemes
+                        phonemes.push(...wordPhonemes[word]);
+                    } else {
+                        // Phonetic analysis for unknown words
+                        const wordPhonemes = this.analyzeWordPhonetically(word, phoneticRules);
+                        phonemes.push(...wordPhonemes);
+                    }
+                    
+                    // Add brief pause between words
+                    phonemes.push('rest');
+                }
+                
+                return phonemes;
+            }
+            
+            analyzeWordPhonetically(word, phoneticRules) {
+                const phonemes = [];
+                let i = 0;
+                
+                while (i < word.length) {
+                    let matched = false;
+                    
+                    // Try to match multi-character patterns first
+                    for (let len = 3; len > 0; len--) {
+                        const substr = word.substr(i, len);
+                        if (phoneticRules[substr]) {
+                            phonemes.push(phoneticRules[substr]);
+                            i += len;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!matched) {
+                        // Single character fallback
+                        const char = word[i];
+                        if (phoneticRules[char]) {
+                            phonemes.push(phoneticRules[char]);
+                        } else if ('aeiou'.includes(char)) {
+                            phonemes.push('open'); // Default vowel
+                        } else if (char.match(/[bcdfghjklmnpqrstvwxyz]/)) {
+                            phonemes.push('closed'); // Default consonant
+                        }
+                        i++;
+                    }
+                }
+                
+                return phonemes;
+            }
+            
+            // HYBRID PHONEME DETECTION: Combines speech recognition and frequency analysis
+            getEnhancedPhoneme() {
+                if (this.useSpeechRecognition && this.speechPhonemeQueue.length > 0) {
+                    // Use speech-to-text phonemes with timing
+                    const timeSinceUpdate = Date.now() - this.lastSpeechUpdate;
+                    const phonemeIndex = Math.floor(timeSinceUpdate / 150); // 150ms per phoneme
+                    
+                    if (phonemeIndex < this.speechPhonemeQueue.length) {
+                        return this.speechPhonemeQueue[phonemeIndex];
+                    } else {
+                        // Speech sequence finished, clear queue
+                        this.speechPhonemeQueue = [];
+                        return 'rest';
+                    }
+                } else {
+                    // Fall back to frequency analysis
+                    return this.detectPhoneme(this.dataArray);
+                }
             }
             
             async startListening() {
@@ -1480,8 +1871,19 @@
                     this.microphone.connect(this.analyser);
                     this.isListening = true;
                     
+                    // Start speech recognition if available
+                    if (this.speechRecognition && this.useSpeechRecognition) {
+                        try {
+                            this.speechRecognition.start();
+                            console.log('Speech recognition started for enhanced phoneme detection');
+                        } catch (error) {
+                            console.warn('Could not start speech recognition:', error);
+                            this.useSpeechRecognition = false;
+                        }
+                    }
+                    
                     this.processAudio();
-                    console.log('Real-time audio processing started');
+                    console.log('Real-time audio processing started with enhanced phoneme detection');
                     
                 } catch (error) {
                     console.error('Error starting audio:', error);
@@ -1494,8 +1896,8 @@
                 this.analyser.getByteFrequencyData(this.dataArray);
                 this.frameCounter++;
                 
-                // Professional phoneme detection with anticipatory timing
-                const detectedPhoneme = this.detectPhoneme(this.dataArray);
+                // ENHANCED PHONEME DETECTION: Use hybrid system
+                const detectedPhoneme = this.getEnhancedPhoneme();
                 
                 // Add to history for anticipatory timing (1-2 frames early)
                 this.phonemeHistory.push({
@@ -1522,10 +1924,67 @@
                     this.coreShapeUsage++;
                 }
                 
-                // Only update if phoneme changed (reduces jitter)
-                if (phonemeToApply !== this.lastPhoneme) {
-                    this.updateMouthShapeWithTiming(phonemeToApply);
+                // IMPROVED TIMING: Add minimum hold time and debouncing
+                const currentTime = Date.now();
+                const timeSinceLastChange = currentTime - (this.lastChangeTime || 0);
+                const minimumHoldTime = 150; // Reduced from 200ms to 150ms for better responsiveness
+                
+                // Only update if phoneme changed AND enough time has passed
+                if (phonemeToApply !== this.lastPhoneme && timeSinceLastChange > minimumHoldTime) {
+                    // Track detected phonemes
+                    this.detectedPhonemes.add(phonemeToApply);
+                    
+                    // Calculate core shape usage percentage
+                    const corePercentage = Math.round((this.coreShapeUsage / this.totalShapeUsage) * 100);
+                    
+                    // Enhanced debug display with professional metrics
+                    const audioStatus = document.getElementById('audioStatus');
+                    if (audioStatus && audioStatus.style.display !== 'none') {
+                        const phonemeList = Array.from(this.detectedPhonemes).join(', ');
+                        const detectionMode = this.useSpeechRecognition ? 'Speech-to-Text' : 'Frequency Analysis';
+                        audioStatus.textContent = `🎤 ${detectionMode} Lip Sync - Current: ${phonemeToApply} | Core Usage: ${corePercentage}% | Detected: (${this.detectedPhonemes.size}/12) ${phonemeList}`;
+                    }
+                    
+                    // SMOOTH TRANSITION DURATIONS for visible morphing
+                    let duration = 0.25; // Base duration for smooth morphing
+                    
+                    // Professional hold timing for different phoneme types
+                    if (['closed', 't', 'k'].includes(phonemeToApply)) {
+                        duration = 0.35; // Longer for plosives to see the mouth position
+                    }
+                    
+                    // Vowels get medium duration
+                    if (['open', 'ee', 'oh', 'oo'].includes(phonemeToApply)) {
+                        duration = 0.3; // Medium duration for vowels
+                    }
+                    
+                    // Fricatives need shorter duration for rapid articulation
+                    if (['s', 'fv', 'th'].includes(phonemeToApply)) {
+                        duration = 0.2; // Faster for fricatives
+                    }
+                    
+                    // Stylized exaggeration for cartoon appeal
+                    let scaleMultiplier = 1.0;
+                    if (['open', 'ee', 'oh'].includes(phonemeToApply)) {
+                        scaleMultiplier = 1.15; // 15% larger for expressive vowels
+                    }
+                    
+                    console.log(`Enhanced audio calling updateMouthForPhoneme with: ${phonemeToApply}, duration: ${duration}, scale: ${scaleMultiplier}, mode: ${this.useSpeechRecognition ? 'Speech' : 'Frequency'}`);
+                    
+                    // Call the expression system's mouth shape update method directly
+                    if (expressionSystem && expressionSystem.updateMouthForPhoneme) {
+                        expressionSystem.updateMouthForPhoneme(phonemeToApply, duration, scaleMultiplier);
+                        
+                        // Secondary facial animations
+                        if (expressionSystem.addSecondaryAnimations) {
+                            expressionSystem.addSecondaryAnimations(phonemeToApply);
+                        }
+                    } else {
+                        console.warn('Expression system or updateMouthForPhoneme method not available');
+                    }
+                    
                     this.lastPhoneme = phonemeToApply;
+                    this.lastChangeTime = currentTime; // Track when we last changed
                 }
                 
                 // High frequency processing for real-time feel
@@ -1533,15 +1992,18 @@
             }
             
             detectPhoneme(frequencyData) {
-                // CARTOON-OPTIMIZED PHONEME DETECTION (Disney 12-Viseme Standard)
-                // Simplified for stylized animation rather than hyper-realistic lip sync
+                // ENHANCED CARTOON-OPTIMIZED PHONEME DETECTION
+                // Professional frequency analysis with temporal smoothing and prediction
                 const sampleRate = this.audioContext.sampleRate;
                 const binSize = sampleRate / this.analyser.fftSize;
                 
-                // Simplified frequency analysis for cartoon aesthetics
-                let highEnergy = 0;        // 2000+ Hz - fricatives and sibilants
-                let midEnergy = 0;         // 500-2000 Hz - vowels
-                let lowEnergy = 0;         // 80-500 Hz - voiced consonants
+                // Enhanced frequency band analysis (more precise ranges)
+                let veryHighEnergy = 0;    // 4000+ Hz - sharp sibilants (s, sh)
+                let highEnergy = 0;        // 2000-4000 Hz - fricatives (f, th)
+                let upperMidEnergy = 0;    // 1000-2000 Hz - vowel formants
+                let midEnergy = 0;         // 400-1000 Hz - fundamental vowel frequencies
+                let lowMidEnergy = 0;      // 150-400 Hz - voiced consonants
+                let lowEnergy = 0;         // 80-150 Hz - vocal cord vibration
                 let totalEnergy = 0;
                 
                 for (let i = 0; i < frequencyData.length; i++) {
@@ -1550,76 +2012,155 @@
                     
                     totalEnergy += amplitude;
                     
-                    if (frequency >= 2000) {
+                    if (frequency >= 4000) {
+                        veryHighEnergy += amplitude;
+                    } else if (frequency >= 2000) {
                         highEnergy += amplitude;
-                    } else if (frequency >= 500) {
+                    } else if (frequency >= 1000) {
+                        upperMidEnergy += amplitude;
+                    } else if (frequency >= 400) {
                         midEnergy += amplitude;
+                    } else if (frequency >= 150) {
+                        lowMidEnergy += amplitude;
                     } else if (frequency >= 80) {
                         lowEnergy += amplitude;
                     }
                 }
                 
-                // Normalize energies
+                // Normalize energies by frequency band size
                 const numBins = frequencyData.length;
-                highEnergy /= numBins;
-                midEnergy /= numBins;
-                lowEnergy /= numBins;
+                veryHighEnergy = veryHighEnergy / (numBins * 0.2); // Fewer high freq bins
+                highEnergy = highEnergy / (numBins * 0.25);
+                upperMidEnergy = upperMidEnergy / (numBins * 0.25);
+                midEnergy = midEnergy / (numBins * 0.3);
+                lowMidEnergy = lowMidEnergy / (numBins * 0.3);
+                lowEnergy = lowEnergy / (numBins * 0.35);
                 totalEnergy /= numBins;
                 
-                // Cartoon-style detection (clear, stylized choices)
-                if (totalEnergy < 0.04) {
+                // TEMPORAL SMOOTHING: Add history for stability
+                if (!this.energyHistory) {
+                    this.energyHistory = [];
+                }
+                
+                this.energyHistory.push({
+                    total: totalEnergy,
+                    veryHigh: veryHighEnergy,
+                    high: highEnergy,
+                    upperMid: upperMidEnergy,
+                    mid: midEnergy,
+                    lowMid: lowMidEnergy,
+                    low: lowEnergy,
+                    timestamp: Date.now()
+                });
+                
+                // Keep only last 5 frames for smoothing
+                if (this.energyHistory.length > 5) {
+                    this.energyHistory.shift();
+                }
+                
+                // Calculate smoothed averages
+                const smoothed = {
+                    total: this.energyHistory.reduce((sum, frame) => sum + frame.total, 0) / this.energyHistory.length,
+                    veryHigh: this.energyHistory.reduce((sum, frame) => sum + frame.veryHigh, 0) / this.energyHistory.length,
+                    high: this.energyHistory.reduce((sum, frame) => sum + frame.high, 0) / this.energyHistory.length,
+                    upperMid: this.energyHistory.reduce((sum, frame) => sum + frame.upperMid, 0) / this.energyHistory.length,
+                    mid: this.energyHistory.reduce((sum, frame) => sum + frame.mid, 0) / this.energyHistory.length,
+                    lowMid: this.energyHistory.reduce((sum, frame) => sum + frame.lowMid, 0) / this.energyHistory.length,
+                    low: this.energyHistory.reduce((sum, frame) => sum + frame.low, 0) / this.energyHistory.length
+                };
+                
+                // SILENCE DETECTION: More sophisticated
+                if (smoothed.total < 0.06 || (smoothed.high < 0.05 && smoothed.mid < 0.05 && smoothed.low < 0.05)) {
                     return 'rest';
                 }
                 
-                // High frequency = sibilants and fricatives
-                if (highEnergy > 0.15) {
-                    if (highEnergy > 0.25) {
-                        return 's'; // Strong sibilants (s, z, sh, ch)
+                // ENHANCED PHONEME CLASSIFICATION
+                // Professional linguistic rules based on acoustic phonetics
+                
+                // 1. SIBILANTS: Sharp, high-frequency noise
+                if (smoothed.veryHigh > 0.15 && smoothed.high > 0.2) {
+                    if (smoothed.veryHigh > 0.25) {
+                        return 's'; // Strong sibilants (s, z, sh, zh)
                     } else {
-                        return Math.random() > 0.5 ? 'fv' : 'th'; // f/v or th sounds
+                        return 's'; // Weaker sibilants, still use S shape
                     }
                 }
                 
-                // Mid frequency = vowels (most important for cartoon expression)
-                if (midEnergy > 0.2) {
-                    const vowelType = (midEnergy * 10 + Date.now() / 1000) % 4;
+                // 2. FRICATIVES: Mid-high frequency noise
+                if (smoothed.high > 0.18 && smoothed.upperMid > 0.15) {
+                    if (smoothed.upperMid > smoothed.mid) {
+                        return 'fv'; // Labiodental fricatives (f, v)
+                    } else {
+                        return 'th'; // Dental fricatives (th)
+                    }
+                }
+                
+                // 3. VOWEL CLASSIFICATION: Based on formant patterns
+                if (smoothed.mid > 0.25 || smoothed.upperMid > 0.2) {
+                    // F1/F2 frequency relationship determines vowel type
+                    const f1Energy = smoothed.mid; // First formant (jaw height)
+                    const f2Energy = smoothed.upperMid; // Second formant (tongue position)
                     
-                    if (vowelType < 1) {
-                        return 'ee'; // High front vowels
-                    } else if (vowelType < 2) {
-                        return 'open'; // Open vowels (ah, a)
-                    } else if (vowelType < 3) {
-                        return 'oh'; // Mid back vowels
+                    if (f2Energy > f1Energy) {
+                        // High F2 = front vowels
+                        if (f1Energy < 0.3) {
+                            return 'ee'; // High front vowels (i, e)
+                        } else {
+                            return 'open'; // Mid-low front vowels (ae, a)
+                        }
                     } else {
-                        return 'oo'; // Rounded vowels
+                        // Low F2 = back vowels
+                        if (f1Energy < 0.35) {
+                            return 'oo'; // High back vowels (u, o)
+                        } else {
+                            return 'oh'; // Mid-low back vowels (aw, ah)
+                        }
                     }
                 }
                 
-                // Low frequency = consonants
-                if (lowEnergy > 0.15) {
-                    const consonantType = (lowEnergy * 15 + Date.now() / 2000) % 4;
+                // 4. CONSONANT CLASSIFICATION: Based on voicing and place
+                if (smoothed.lowMid > 0.2 || smoothed.low > 0.15) {
+                    const voicing = smoothed.low; // Fundamental frequency indicates voicing
+                    const articulation = smoothed.lowMid; // Mid frequencies show place of articulation
                     
-                    if (consonantType < 1) {
-                        return 'closed'; // Bilabials (m, b, p)
-                    } else if (consonantType < 2) {
-                        return 't'; // Alveolars (t, d, n)
-                    } else if (consonantType < 3) {
-                        return 'k'; // Velars (k, g, ng)
+                    if (articulation > voicing * 1.5) {
+                        // Strong articulation = alveolar consonants
+                        return Math.random() > 0.5 ? 't' : 'l'; // t/d/n or l/r
+                    } else if (voicing > 0.2) {
+                        // Strong voicing = bilabial or velar
+                        return Math.random() > 0.5 ? 'closed' : 'k'; // m/b/p or k/g/ng
                     } else {
-                        return 'l'; // Laterals (l, r)
+                        return 'l'; // Liquids and approximants
                     }
                 }
                 
-                // Moderate energy = general speech
-                if (totalEnergy > 0.08) {
-                    // Cycle through most expressive visemes for cartoon appeal
-                    const expressiveVisemes = ['open', 'ee', 'oh', 'oo', 's', 't'];
-                    const index = Math.floor((totalEnergy * 20 + Date.now() / 1000) % expressiveVisemes.length);
+                // 5. DYNAMIC FALLBACK: Use recent history for context
+                if (this.phonemeHistory && this.phonemeHistory.length > 2) {
+                    const recentPhonemes = this.phonemeHistory.slice(-3).map(h => h.phoneme);
+                    
+                    // If recent vowels, likely continuing vowel
+                    if (recentPhonemes.some(p => ['open', 'ee', 'oh', 'oo'].includes(p))) {
+                        const vowelOptions = ['open', 'ee', 'oh', 'oo'];
+                        return vowelOptions[Math.floor(Math.random() * vowelOptions.length)];
+                    }
+                    
+                    // If recent consonants, likely continuing consonant
+                    if (recentPhonemes.some(p => ['closed', 't', 'k', 'l', 's', 'fv'].includes(p))) {
+                        const consonantOptions = ['closed', 't', 'l'];
+                        return consonantOptions[Math.floor(Math.random() * consonantOptions.length)];
+                    }
+                }
+                
+                // 6. FINAL FALLBACK: Expressive default based on energy
+                if (smoothed.total > 0.12) {
+                    // Moderate energy - cycle through most expressive visemes
+                    const expressiveVisemes = ['open', 'oh', 'ee'];
+                    const index = Math.floor((smoothed.total * 25 + Date.now() / 1500) % expressiveVisemes.length);
                     return expressiveVisemes[index];
                 }
                 
-                // Default to natural speaking position
-                return 'open';
+                // Very low energy
+                return 'rest';
             }
             
             updateMouthShape(phoneme) {
@@ -1658,27 +2199,48 @@
                 if (this.audioContext) {
                     this.audioContext.close();
                 }
+                
+                // Stop speech recognition
+                if (this.speechRecognition && this.useSpeechRecognition) {
+                    try {
+                        this.speechRecognition.stop();
+                        console.log('Speech recognition stopped');
+                    } catch (error) {
+                        console.warn('Error stopping speech recognition:', error);
+                    }
+                }
+                
                 console.log('Audio processing stopped');
             }
         }
         
         // Initialize the expression system
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== Initializing Expression System ===');
+            
             expressionSystem = new HighQualityExpressionSystem('avatarContainer', {
                 enableSentimentAnalysis: true,
                 animationDuration: 200,
                 highQuality: true
             });
             
+            console.log('Expression system created:', !!expressionSystem);
+            console.log('Phoneme mouths:', Object.keys(expressionSystem.phonemeMouths || {}));
+            
             // Initialize audio processor
             audioProcessor = new RealTimeAudioProcessor();
+            
+            console.log('Audio processor created:', !!audioProcessor);
             
             setupEventListeners();
             
             // Set to idle state instead of cycling demo
             setTimeout(() => {
+                console.log('Setting initial idle expression');
                 expressionSystem.setExpression('idle');
             }, 500);
+            
+            console.log('=== Initialization Complete ===');
         });
         
         function setupEventListeners() {
@@ -1729,6 +2291,40 @@
                     expressionSystem.setExpression('neutral');
                     // Hide audio status
                     audioStatus.style.display = 'none';
+                }
+            });
+            
+            // Speech recognition mode toggle
+            document.getElementById('speechRecognitionToggle').addEventListener('change', function() {
+                if (audioProcessor) {
+                    audioProcessor.useSpeechRecognition = this.checked;
+                    
+                    if (this.checked) {
+                        // Start speech recognition if audio is already listening
+                        if (audioProcessor.isListening && audioProcessor.speechRecognition) {
+                            try {
+                                audioProcessor.speechRecognition.start();
+                                console.log('Speech recognition mode enabled');
+                            } catch (error) {
+                                console.warn('Could not start speech recognition:', error);
+                                this.checked = false;
+                                audioProcessor.useSpeechRecognition = false;
+                                alert('Speech recognition not available. Using frequency analysis.');
+                            }
+                        }
+                    } else {
+                        // Stop speech recognition
+                        if (audioProcessor.speechRecognition) {
+                            try {
+                                audioProcessor.speechRecognition.stop();
+                                console.log('Speech recognition mode disabled - using frequency analysis');
+                            } catch (error) {
+                                console.warn('Error stopping speech recognition:', error);
+                            }
+                        }
+                    }
+                    
+                    console.log(`Phoneme detection mode: ${this.checked ? 'Speech-to-Text' : 'Frequency Analysis'}`);
                 }
             });
             
@@ -1857,6 +2453,44 @@
                 }
             }
         });
+
+        function testSVGMouth() {
+            console.log('=== Testing Parametric Mouth System ===');
+            console.log('Expression system exists:', !!expressionSystem);
+            
+            if (expressionSystem) {
+                console.log('Phoneme parameters available:', Object.keys(expressionSystem.phonemeMouths || {}));
+                
+                // Test all parametric mouth shapes in sequence
+                const parametricPhonemes = ['rest', 'closed', 'open', 'ee', 'oh', 'oo', 's', 'fv', 'th', 'l', 'k', 't'];
+                let index = 0;
+                
+                function cycleNextMouth() {
+                    if (index < parametricPhonemes.length) {
+                        const phoneme = parametricPhonemes[index];
+                        console.log(`=== Testing Parametric mouth ${index + 1}/${parametricPhonemes.length}: ${phoneme} ===`);
+                        expressionSystem.updateMouthForPhoneme(phoneme, 0.3, 1.2);
+                        index++;
+                        setTimeout(cycleNextMouth, 1000); // Wait 1 second between each
+                    } else {
+                        console.log('=== Parametric mouth test complete ===');
+                        // Return to neutral
+                        expressionSystem.setExpression('idle');
+                    }
+                }
+                
+                cycleNextMouth();
+            } else {
+                console.error('Expression system not found');
+            }
+            
+            if (audioProcessor) {
+                console.log('SVG cache size:', audioProcessor.svgCache.size);
+                console.log('Cached SVGs:', Array.from(audioProcessor.svgCache.keys()));
+            } else {
+                console.error('Audio processor not found');
+            }
+        }
     </script>
 </body>
 </html> 

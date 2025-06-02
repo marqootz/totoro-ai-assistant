@@ -1,0 +1,14 @@
+<svg width="79" height="47" viewBox="0 0 79 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="l">
+<path id="mouth" d="M-5.4911e-06 22.5408C-4.39963e-06 10.0558 17.6847 2.26904e-06 39.5 4.17619e-06C61.3153 6.08334e-06 79 10.0558 79 22.5408C79 35.0257 69.0857 47 39.5 47C9.91434 47 -6.58257e-06 35.0257 -5.4911e-06 22.5408Z" fill="black"/>
+<g id="mouth_mask_group">
+<mask id="mask0_3_43" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="79" height="47">
+<path id="mouth_mask" d="M-5.4911e-06 22.5408C-4.39963e-06 10.0558 17.6847 2.26904e-06 39.5 4.17619e-06C61.3153 6.08334e-06 79 10.0558 79 22.5408C79 35.0257 69.0857 47 39.5 47C9.91434 47 -6.58257e-06 35.0257 -5.4911e-06 22.5408Z" fill="black"/>
+</mask>
+<g mask="url(#mask0_3_43)">
+<rect id="tongue" x="17" y="22" width="46" height="26" rx="13" fill="#905252"/>
+<rect id="teeth_top" x="-26" y="-25" width="132" height="47" fill="#D9D9D9"/>
+</g>
+</g>
+</g>
+</svg>

@@ -1,0 +1,13 @@
+<svg width="65" height="37" viewBox="0 0 65 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="r">
+<path id="mouth" d="M1.56413e-06 17.7449C1.21926e-06 3.14894 14.5507 2.0197e-07 32.5 1.77114e-06C50.4493 3.34032e-06 65 3.54255 65 17.7449C65 31.9472 56.8426 37 32.5 37C8.15736 37 1.909e-06 32.3408 1.56413e-06 17.7449Z" fill="black"/>
+<g id="mouth_mask_group">
+<mask id="mask0_3_57" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="65" height="37">
+<path id="mouth_mask" d="M1.56413e-06 17.7449C1.21926e-06 3.14894 14.5507 2.0197e-07 32.5 1.77114e-06C50.4493 3.34032e-06 65 3.54255 65 17.7449C65 31.9472 56.8426 37 32.5 37C8.15736 37 1.909e-06 32.3408 1.56413e-06 17.7449Z" fill="black"/>
+</mask>
+<g mask="url(#mask0_3_57)">
+<rect id="teeth_top" x="-33" y="-32" width="132" height="47" fill="#D9D9D9"/>
+</g>
+</g>
+</g>
+</svg>

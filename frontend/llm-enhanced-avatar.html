@@ -315,6 +315,8 @@
         <div class="main-content">
             <div class="avatar-section">
                 <div id="avatarContainer"></div>
+                <!-- Test div for easing verification -->
+                <div id="testDiv" style="width: 20px; height: 20px; background: red; position: absolute; top: 10px; right: 10px; border-radius: 50%;"></div>
                 <div class="preset-controls">
                     <div class="section-title">Quick Presets</div>
                     <div class="preset-grid">
@@ -391,7 +393,7 @@ Examples:
             constructor(containerId, options = {}) {
                 this.container = document.getElementById(containerId);
                 this.options = {
-                    animationDuration: 800,
+                    animationDuration: 200,
                     enableLLMGeneration: true,
                     ...options
                 };
@@ -422,10 +424,10 @@ Examples:
                 
                 this.faceGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 
-                this.headPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.headPath.setAttribute('fill', 'url(#faceGradient)');
-                this.headPath.setAttribute('stroke', '#34495e');
-                this.headPath.setAttribute('stroke-width', '2');
+                this.head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.head.setAttribute('fill', '#D9D9D9');
+                this.head.setAttribute('stroke', '#bbb');
+                this.head.setAttribute('stroke-width', '2');
                 
                 this.leftEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 this.leftEye.setAttribute('fill', '#2c3e50');
@@ -433,15 +435,16 @@ Examples:
                 this.rightEye = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 this.rightEye.setAttribute('fill', '#2c3e50');
                 
-                this.mouth = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                this.mouth.setAttribute('fill', '#2c3e50');
-                this.mouth.setAttribute('stroke', 'none');
-                this.mouth.setAttribute('stroke-linecap', 'round');
+                this.bridge = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                this.bridge.setAttribute('fill', 'none');
+                this.bridge.setAttribute('stroke', '#2c3e50');
+                this.bridge.setAttribute('stroke-width', '4');
+                this.bridge.setAttribute('stroke-linecap', 'round');
                 
-                this.faceGroup.appendChild(this.headPath);
+                this.faceGroup.appendChild(this.head);
                 this.faceGroup.appendChild(this.leftEye);
                 this.faceGroup.appendChild(this.rightEye);
-                this.faceGroup.appendChild(this.mouth);
+                this.faceGroup.appendChild(this.bridge);
                 this.svg.appendChild(this.faceGroup);
                 this.container.appendChild(this.svg);
             }
@@ -471,43 +474,43 @@ Examples:
             }
 
             setupExpressionPaths() {
-                // Enhanced expression paths with cubic Bézier curves (Figma-style)
+                // H1RO-style avatar expressions with bridge connecting eyes (no mouth)
                 this.expressions = {
                     neutral: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
-                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
-                        mouth: 'M170,245 Q200,255 230,245 Q200,265 170,245 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M130 172C130 185.255 119.255 196 106 196C92.7452 196 82 185.255 82 172C82 158.745 92.7452 148 106 148C119.255 148 130 158.745 130 172Z',
+                        rightEye: 'M318 172C318 185.255 307.255 196 294 196C280.745 196 270 185.255 270 172C270 158.745 280.745 148 294 148C307.255 148 318 158.745 318 172Z',
+                        mouth: 'M106 172 L294 172'
                     },
                     happy: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M190,185 C190,198.8 178.8,210 165,210 C151.2,210 140,198.8 140,185 C140,171.2 151.2,160 165,160 C178.8,160 190,171.2 190,185 Z',
-                        rightEye: 'M274,185 C274,198.8 262.8,210 249,210 C235.2,210 224,198.8 224,185 C224,171.2 235.2,160 249,160 C262.8,160 274,171.2 274,185 Z',
-                        mouth: 'M160,240 Q200,220 240,240 Q200,270 160,240 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M125 165C125 175.493 116.493 184 106 184C95.507 184 87 175.493 87 165C87 154.507 95.507 146 106 146C116.493 146 125 154.507 125 165Z',
+                        rightEye: 'M313 165C313 175.493 304.493 184 294 184C283.507 184 275 175.493 275 165C275 154.507 283.507 146 294 146C304.493 146 313 154.507 313 165Z',
+                        mouth: 'M106 165 L294 165'
                     },
                     sad: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,190 C185,202.7 174.7,213 162,213 C149.3,213 139,202.7 139,190 C139,177.3 149.3,167 162,167 C174.7,167 185,177.3 185,190 Z',
-                        rightEye: 'M269,190 C269,202.7 258.7,213 246,213 C233.3,213 223,202.7 223,190 C223,177.3 233.3,167 246,167 C258.7,167 269,177.3 269,190 Z',
-                        mouth: 'M180,265 Q200,280 220,265 Q200,275 180,265 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M125 180C125 192.703 114.703 203 102 203C89.2975 203 79 192.703 79 180C79 167.297 89.2975 157 102 157C114.703 157 125 167.297 125 180Z',
+                        rightEye: 'M313 180C313 192.703 302.703 203 290 203C277.297 203 267 192.703 267 180C267 167.297 277.297 157 290 157C302.703 157 313 167.297 313 180Z',
+                        mouth: 'M102 180 L290 180'
                     },
                     surprised: {
-                        head: 'M75,115 Q75,75 115,75 L285,75 Q325,75 325,115 L325,285 Q325,325 285,325 L115,325 Q75,325 75,285 Z',
-                        leftEye: 'M200,180 C200,202.1 182.1,220 160,220 C137.9,220 120,202.1 120,180 C120,157.9 137.9,140 160,140 C182.1,140 200,157.9 200,180 Z',
-                        rightEye: 'M284,180 C284,202.1 266.1,220 244,220 C221.9,220 204,202.1 204,180 C204,157.9 221.9,140 244,140 C266.1,140 284,157.9 284,180 Z',
-                        mouth: 'M190,250 Q200,230 210,250 Q200,270 190,250 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M145 172C145 192.987 128.987 210 108 210C87.0132 210 71 192.987 71 172C71 151.013 87.0132 134 108 134C128.987 134 145 151.013 145 172Z',
+                        rightEye: 'M339 172C339 192.987 322.987 210 302 210C281.013 210 265 192.987 265 172C265 151.013 281.013 134 302 134C322.987 134 339 151.013 339 172Z',
+                        mouth: 'M108 172 L302 172'
                     },
                     thinking: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M182,180 C182,192.7 171.7,203 159,203 C146.3,203 136,192.7 136,180 C136,167.3 146.3,157 159,157 C171.7,157 182,167.3 182,180 Z',
-                        rightEye: 'M266,180 C266,192.7 255.7,203 243,203 C230.3,203 220,192.7 220,180 C220,167.3 230.3,157 243,157 C255.7,157 266,167.3 266,180 Z',
-                        mouth: 'M185,250 Q200,245 215,250 Q200,255 185,250 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M120 172C120 180.284 113.284 187 105 187C96.7157 187 90 180.284 90 172C90 163.716 96.7157 157 105 157C113.284 157 120 163.716 120 172Z',
+                        rightEye: 'M310 172C310 180.284 303.284 187 295 187C286.716 187 280 180.284 280 172C280 163.716 286.716 157 295 157C303.284 157 310 163.716 310 172Z',
+                        mouth: 'M105 172 L295 172'
                     },
                     speaking: {
-                        head: 'M80,120 Q80,80 120,80 L280,80 Q320,80 320,120 L320,280 Q320,320 280,320 L120,320 Q80,320 80,280 Z',
-                        leftEye: 'M185,180 C185,194.9 172.9,207 158,207 C143.1,207 131,194.9 131,180 C131,165.1 143.1,153 158,153 C172.9,153 185,165.1 185,180 Z',
-                        rightEye: 'M269,180 C269,194.9 256.9,207 242,207 C227.1,207 215,194.9 215,180 C215,165.1 227.1,153 242,153 C256.9,153 269,165.1 269,180 Z',
-                        mouth: 'M170,235 Q200,215 230,235 Q200,275 170,235 Z'
+                        head: 'M400 172C400 250.077 310.457 312 200 312C89.5431 312 0 250.077 0 172C0 93.9228 50.4 0 200 0C350 0 400 93.9228 400 172Z',
+                        leftEye: 'M130 172C130 185.255 119.255 196 106 196C92.7452 196 82 185.255 82 172C82 158.745 92.7452 148 106 148C119.255 148 130 158.745 130 172Z',
+                        rightEye: 'M318 172C318 185.255 307.255 196 294 196C280.745 196 270 185.255 270 172C270 158.745 280.745 148 294 148C307.255 148 318 158.745 318 172Z',
+                        mouth: 'M106 172 L294 172'
                     }
                 };
             }
@@ -519,10 +522,10 @@ Examples:
 
             setInitialPaths() {
                 const neutral = this.expressions.neutral;
-                this.headPath.setAttribute('d', neutral.head);
+                this.head.setAttribute('d', neutral.head);
                 this.leftEye.setAttribute('d', neutral.leftEye);
                 this.rightEye.setAttribute('d', neutral.rightEye);
-                this.mouth.setAttribute('d', neutral.mouth);
+                this.bridge.setAttribute('d', neutral.mouth);
             }
 
             setupMorphingAnimations() {
@@ -637,12 +640,22 @@ Examples:
                 this.isAnimating = true;
                 const duration = this.options.animationDuration;
                 
+                // Test simple div animation to verify GSAP easing works
+                const testDiv = document.getElementById('testDiv');
+                gsap.to(testDiv, {
+                    duration: duration / 1000,
+                    x: 100,
+                    ease: "back.out(3)",
+                    yoyo: true,
+                    repeat: 1
+                });
+                
                 const elements = ['head', 'leftEye', 'rightEye', 'mouth'];
                 const elementMappings = {
-                    head: this.headPath,
+                    head: this.head,
                     leftEye: this.leftEye,
                     rightEye: this.rightEye,
-                    mouth: this.mouth
+                    mouth: this.bridge
                 };
                 
                 const timeline = gsap.timeline({
@@ -657,15 +670,33 @@ Examples:
                     const morphFunction = this.morphFunctions[this.currentEmotion]?.[element]?.[emotion];
                     
                     if (morphFunction) {
+                        // Apply bouncy scaling only to eyes and bridge (not head)
+                        if (element !== 'head') {
+                            timeline.to(domElement, {
+                                duration: duration / 1000,
+                                scale: 1.1,
+                                ease: "back.out(3)",
+                                transformOrigin: "center center"
+                            }, 0);
+                            
+                            timeline.to(domElement, {
+                                duration: duration / 1000,
+                                scale: 1.0,
+                                ease: "back.out(3)",
+                                transformOrigin: "center center"
+                            }, duration / 1000);
+                        }
+                        
+                        // Morphing animation for all elements
                         timeline.to({}, {
-                            duration: duration / 1000,
-                            ease: "power2.inOut",
+                            duration: duration / 1000 * 2, // Double duration for the full cycle
+                            ease: "none", // Accept that morphing is linear
                             onUpdate: function() {
                                 const progress = this.progress();
                                 const newPath = morphFunction(progress);
                                 domElement.setAttribute('d', newPath);
                             },
-                            delay: index * 0.03
+                            delay: index * 0.01
                         }, 0);
                     }
                 });
