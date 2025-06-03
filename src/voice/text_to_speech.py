@@ -202,9 +202,18 @@ class TextToSpeech:
             # Generate speech with Coqui TTS
             logger.debug(f"Generating Coqui speech...")
             
-            # Get George's voice path from config if no specific path provided
+            # Get voice path from config if no specific path provided
             if not audio_prompt_path:
-                audio_prompt_path = getattr(config, 'GEORGE_VOICE_PATH', None)
+                # Priority order: K2-SO voice -> George voice -> None
+                if hasattr(config, 'K2SO_VOICE_PATH') and getattr(config, 'USE_K2SO_VOICE', False):
+                    audio_prompt_path = config.K2SO_VOICE_PATH
+                    logger.debug("Using K2-SO voice from config")
+                elif hasattr(config, 'GEORGE_VOICE_PATH') and getattr(config, 'USE_GEORGE_VOICE', False):
+                    audio_prompt_path = config.GEORGE_VOICE_PATH
+                    logger.debug("Using George voice from config")
+                else:
+                    audio_prompt_path = getattr(config, 'GEORGE_VOICE_PATH', None)
+                    logger.debug("Using fallback George voice path")
             
             # Coqui XTTS requires a speaker voice for cloning
             if not audio_prompt_path or not os.path.exists(audio_prompt_path):
