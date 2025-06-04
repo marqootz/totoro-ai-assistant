@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphing Ring - AI States</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: visible;
+        }
+
+        .ring-container {
+            width: 400px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .morphing-ring {
+            width: 300px;
+            height: 300px;
+            overflow: visible;
+        }
+
+        .ring-container.thinking .morphing-ring {
+            /* Removed drop-shadow glow */
+        }
+
+        .ring-container.responding .morphing-ring {
+            /* Removed drop-shadow glow */
+        }
+
+        .state-indicator {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            font-weight: 400;
+            text-align: center;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .noise-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 250px;
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .noise-controls h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #F05B8E;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .control-group .value-display {
+            font-size: 10px;
+            color: rgba(255, 255, 100, 0.9);
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .noise-visualizer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+        }
+
+        .noise-canvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .noise-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .ring-container {
+                width: 90vw;
+                height: 90vw;
+                max-width: 350px;
+                max-height: 350px;
+            }
+            
+            .morphing-ring {
+                width: 80%;
+                height: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        Click: Demo cycle<br>
+        1: Idle | 2: Thinking | 3: Responding<br>
+        Space: Cycle states
+    </div>
+
+    <div class="ring-container" id="ringContainer">
+        <svg class="morphing-ring" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Magenta gradient for idle state -->
+                <radialGradient id="idleGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#F05B8E;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#F05B8E;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Thinking gradient - solid magenta -->
+                <radialGradient id="thinkingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#F05B8E;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#F05B8E;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Responding gradient - solid magenta -->
+                <radialGradient id="respondingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#F05B8E;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#F05B8E;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Cyan ring gradients -->
+                <!-- Cyan idle gradient -->
+                <radialGradient id="cyanIdleGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#51ABFA;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#51ABFA;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Cyan thinking gradient -->
+                <radialGradient id="cyanThinkingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#51ABFA;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#51ABFA;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Cyan responding gradient -->
+                <radialGradient id="cyanRespondingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#51ABFA;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#51ABFA;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Yellow ring gradients -->
+                <!-- Yellow idle gradient -->
+                <radialGradient id="yellowIdleGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Yellow thinking gradient -->
+                <radialGradient id="yellowThinkingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Yellow responding gradient -->
+                <radialGradient id="yellowRespondingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFFC4A;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Blue ring gradients -->
+                <!-- Blue idle gradient -->
+                <radialGradient id="blueIdleGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Blue thinking gradient -->
+                <radialGradient id="blueThinkingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:1" />
+                </radialGradient>
+
+                <!-- Blue responding gradient -->
+                <radialGradient id="blueRespondingGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:1" />
+                </radialGradient>
+            </defs>
+
+            <!-- The morphing ring path -->
+            <path id="morphingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#idleGradient)"
+                  fill-rule="evenodd"/>
+
+            <!-- The cyan ring path (5px thick) -->
+            <path id="cyanRingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#cyanIdleGradient)"
+                  fill-rule="evenodd"
+                  style="opacity: 1;"/>
+
+            <!-- Inverted magenta ring path (inward distortions, 25% magnitude) -->
+            <path id="invertedMagentaRingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#idleGradient)"
+                  fill-rule="evenodd"
+                  style="opacity: 0;"/>
+
+            <!-- Inverted cyan ring path (inward distortions, 25% magnitude) -->
+            <path id="invertedCyanRingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#cyanIdleGradient)"
+                  fill-rule="evenodd"
+                  style="opacity: 0;"/>
+
+            <!-- Yellow ring path (outward distortions) -->
+            <path id="yellowRingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#yellowIdleGradient)"
+                  fill-rule="evenodd"
+                  style="opacity: 1;"/>
+
+            <!-- Inverted yellow ring path (inward distortions, 25% magnitude) -->
+            <path id="invertedYellowRingPath" 
+                  d="M150 30 C164 30, 177 32, 189 38 C213 48, 235 65, 252 87 C262 100, 270 114, 270 150 C270 164, 268 177, 262 189 C252 213, 235 235, 213 252 C200 262, 186 270, 150 270 C136 270, 123 268, 111 262 C87 252, 65 235, 48 213 C38 200, 30 186, 30 150 C30 136, 32 123, 38 111 C48 87, 65 65, 87 48 C100 38, 114 30, 150 30 Z
+                     M150 145 C154 145, 158 145, 162 146 C172 149, 181 154, 189 162 C192 166, 194 171, 194 150 C194 154, 193 158, 192 162 C189 172, 181 181, 172 189 C168 192, 163 194, 150 194 C146 194, 142 193, 138 192 C128 189, 119 181, 111 172 C108 168, 106 163, 106 150 C106 146, 107 142, 108 138 C111 128, 119 119, 128 111 C132 108, 137 106, 150 145 Z"
+                  fill="url(#yellowIdleGradient)"
+                  fill-rule="evenodd"
+                  style="opacity: 0;"/>
+                  
+            <!-- Pink C - Lines Ring -->
+            <g id="magentaLinesRing" style="opacity: 1;">
+                <!-- Lines will be generated dynamically -->
+            </g>
+            
+            <!-- Blue D - Dots Ring -->
+            <g id="blueDotsRing" style="opacity: 1;">
+                <!-- Dots will be generated dynamically -->
+            </g>
+        </svg>
+        
+        <div class="state-indicator" id="stateIndicator">
+            Idle State
+        </div>
+    </div>
+
+    <div class="noise-visualizer">
+        <canvas class="noise-canvas"></canvas>
+    </div>
+
+    <div class="noise-controls">
+        <h3>Noise Controls</h3>
+        
+        <div class="control-group">
+            <label>Ring Visibility:</label>
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <label style="display: flex; align-items: center; gap: 3px; font-size: 10px;">
+                    <input type="checkbox" id="showMagenta" checked style="margin: 0;">
+                    <span style="color: #F05B8E;">Pink A</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 3px; font-size: 10px;">
+                    <input type="checkbox" id="showCyan" checked style="margin: 0;">
+                    <span style="color: #51ABFA;">Cyan A</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 3px; font-size: 10px;">
+                    <input type="checkbox" id="showYellow" checked style="margin: 0;">
+                    <span style="color: #FFFC4A;">Yellow A</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 3px; font-size: 10px;">
+                    <input type="checkbox" id="showMagentaLines" checked style="margin: 0;">
+                    <span style="color: #F05B8E;">Pink C</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 3px; font-size: 10px;">
+                    <input type="checkbox" id="showBlueDots" checked style="margin: 0;">
+                    <span style="color: #4A90E2;">Blue D</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="ringSelector">Edit Ring:</label>
+            <select id="ringSelector" style="width: 100%; padding: 4px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
+                <option value="magenta">Pink A</option>
+                <option value="cyan">Cyan A</option>
+                <option value="yellow">Yellow A</option>
+                <option value="magentaLines">Pink C</option>
+                <option value="blueDots">Blue D</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="cellSize">Cell Size (larger = smoother)</label>
+            <input type="range" id="cellSize" min="0.1" max="10" step="0.1" value="4.2">
+            <div class="value-display">4.2</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="invertedCellSize">Inverted Ring Cell Size</label>
+            <input type="range" id="invertedCellSize" min="0.1" max="10" step="0.1" value="6">
+            <div class="value-display">6</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="noiseOctaves">Noise Octaves</label>
+            <input type="range" id="noiseOctaves" min="1" max="8" step="1" value="3">
+            <div class="value-display">3</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="noisePersistence">Noise Persistence</label>
+            <input type="range" id="noisePersistence" min="0.1" max="1.0" step="0.05" value="0.7">
+            <div class="value-display">0.7</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="lacunarity">Lacunarity (frequency multiplier)</label>
+            <input type="range" id="lacunarity" min="1.5" max="4.0" step="0.1" value="2.0">
+            <div class="value-display">2.0</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="springFreq">Spring Frequency</label>
+            <input type="range" id="springFreq" min="0" max="50" step="1" value="0">
+            <div class="value-display">0</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="springDamping">Spring Damping</label>
+            <input type="range" id="springDamping" min="0" max="1.0" step="0.05" value="0.00">
+            <div class="value-display">0.00</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="timeScale">Time Scale Multiplier</label>
+            <input type="range" id="timeScale" min="1" max="100" step="0.1" value="10.0">
+            <div class="value-display">10.0</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="timeStep">Time Step (animation smoothness)</label>
+            <input type="range" id="timeStep" min="0" max="1.0" step="0.01" value="0.050">
+            <div class="value-display">0.050</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="amplitudeMultiplier">Amplitude Multiplier</label>
+            <input type="range" id="amplitudeMultiplier" min="0.1" max="5.0" step="0.1" value="3.6">
+            <div class="value-display">3.6</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="ringOpacity">Ring Opacity</label>
+            <input type="range" id="ringOpacity" min="0.0" max="1.0" step="0.05" value="1.0">
+            <div class="value-display">1.0</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="jellyStiffness">Jelly Stiffness (spring strength)</label>
+            <input type="range" id="jellyStiffness" min="0.01" max="2.0" step="0.01" value="1.50">
+            <div class="value-display">1.50</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="jellyDamping">Jelly Damping (bounce reduction)</label>
+            <input type="range" id="jellyDamping" min="0.01" max="0.5" step="0.01" value="0.21">
+            <div class="value-display">0.21</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="jellyMass">Jelly Mass (inertia)</label>
+            <input type="range" id="jellyMass" min="0.1" max="3.0" step="0.1" value="0.1">
+            <div class="value-display">0.1</div>
+        </div>
+        
+        <div class="control-group">
+            <label for="enableJelly">Enable Jelly Physics</label>
+            <input type="checkbox" id="enableJelly" checked>
+        </div>
+        
+        <div class="control-group">
+            <label>Debug Info:</label>
+            <div id="debugInfo" style="font-size: 10px; color: rgba(255, 255, 0, 0.7); margin-top: 5px;">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MorphingRing {
+            constructor() {
+                this.container = document.getElementById('ringContainer');
+                this.stateIndicator = document.getElementById('stateIndicator');
+                this.morphingPath = document.getElementById('morphingPath');
+                this.cyanRingPath = document.getElementById('cyanRingPath');
+                this.invertedMagentaRingPath = document.getElementById('invertedMagentaRingPath');
+                this.invertedCyanRingPath = document.getElementById('invertedCyanRingPath');
+                this.yellowRingPath = document.getElementById('yellowRingPath');
+                this.invertedYellowRingPath = document.getElementById('invertedYellowRingPath');
+                this.magentaLinesRing = document.getElementById('magentaLinesRing');
+                this.blueDotsRing = document.getElementById('blueDotsRing');
+                this.currentState = 'idle';
+                this.isTransitioning = false;
+                
+                // Magenta ring parameters (50% thinner)
+                this.centerX = 150;
+                this.centerY = 150;
+                this.outerRadius = 150;
+                this.innerRadius = 145; // 5px thick (150-145=5)
+                this.numPoints = 16; // Doubled from 8 to 16 for Ring A outer edge
+                this.innerNumPoints = 16; // More control points for inner edges of inverted rings
+                this.numLinesPoints = 48; // Triple the points for magenta lines ring (16 * 3)
+                this.numBlueDotsPoints = 64; // Quadruple the points for blue dots ring (16 * 4)
+                
+                // Cyan ring parameters (same inner diameter as magenta)
+                this.cyanOuterRadius = 150; // Same outer diameter
+                this.cyanInnerRadius = 145; // Same inner diameter as magenta ring
+                
+                // Yellow ring parameters (same dimensions as others)
+                this.yellowOuterRadius = 150;
+                this.yellowInnerRadius = 145;
+                
+                // Perlin noise parameters
+                this.perlinSeed = Math.random() * 1000;
+                this.outerNoiseOffset = 0;
+                this.innerNoiseOffset = 100;
+                this.cyanOuterNoiseOffset = 200; // Different offsets for independent movement
+                this.cyanInnerNoiseOffset = 300;
+                this.yellowOuterNoiseOffset = 500; // Yellow ring offsets
+                this.yellowInnerNoiseOffset = 600;
+                
+                // Noise visualization setup
+                this.noiseCanvas = document.querySelector('.noise-canvas');
+                this.noiseCtx = this.noiseCanvas.getContext('2d');
+                this.noiseCanvas.width = 500;
+                this.noiseCanvas.height = 400;
+                
+                // UI-controlled noise parameters - separate for each ring
+                this.currentRing = 'magenta'; // Which ring is currently being edited
+                
+                // Magenta ring parameters - slower, smoother
+                this.magentaParams = {
+                    spatialFreq: 1 / 3.0,  // Cell size 3.0 (smoother)
+                    noiseOctaves: 3,
+                    noisePersistence: 0.60,
+                    lacunarity: 2.0,
+                    springFreq: 0,
+                    springDamping: 0.00,
+                    timeScaleMultiplier: 20.0,  // Moderate speed
+                    timeStep: 0.140,
+                    amplitudeMultiplier: 1.1,
+                    jellyStiffness: 1.20,
+                    jellyDamping: 0.15,
+                    jellyMass: 0.5,
+                    enableJelly: true,
+                    opacity: 1.0
+                };
+                
+                // Cyan ring parameters - faster, more detailed
+                this.cyanParams = {
+                    spatialFreq: 1 / 1.5,  // Cell size 1.5 (more detailed)
+                    noiseOctaves: 4,
+                    noisePersistence: 0.7,
+                    lacunarity: 2.2,
+                    springFreq: 0,
+                    springDamping: 0.00,
+                    timeScaleMultiplier: 35.0,  // Faster speed
+                    timeStep: 0.045,
+                    amplitudeMultiplier: 2.0,
+                    jellyStiffness: 1.6,
+                    jellyDamping: 0.08,
+                    jellyMass: 0.2,
+                    enableJelly: true,
+                    opacity: 1.0
+                };
+                
+                // Yellow ring parameters - very fast, chaotic
+                this.yellowParams = {
+                    spatialFreq: 1 / 0.8,  // Cell size 0.8 (very detailed)
+                    noiseOctaves: 5,
+                    noisePersistence: 0.80,
+                    lacunarity: 2.5,
+                    springFreq: 0,
+                    springDamping: 0.00,
+                    timeScaleMultiplier: 60.0,  // Very fast speed
+                    timeStep: 0.050,
+                    amplitudeMultiplier: 0.5,
+                    jellyStiffness: 2.00,
+                    jellyDamping: 0.05,
+                    jellyMass: 0.1,
+                    enableJelly: true,
+                    opacity: 1.0
+                };
+                
+                // Magenta Lines ring parameters - moderate, artistic
+                this.magentaLinesParams = {
+                    spatialFreq: 1 / 2.5,  // Cell size 2.5 (smooth)
+                    noiseOctaves: 3,
+                    noisePersistence: 0.6,
+                    lacunarity: 2.0,
+                    springFreq: 0,
+                    springDamping: 0.00,
+                    timeScaleMultiplier: 25.0,  // Moderate speed
+                    timeStep: 0.035,
+                    amplitudeMultiplier: 1.8,
+                    jellyStiffness: 1.0,
+                    jellyDamping: 0.12,
+                    jellyMass: 0.3,
+                    enableJelly: true,
+                    opacity: 1.0
+                };
+                
+                // Blue Dots ring parameters - moderate speed, medium detail
+                this.blueDotsParams = {
+                    spatialFreq: 1 / 3.0,  // Cell size 3.0 (smooth)
+                    noiseOctaves: 3,
+                    noisePersistence: 0.50,
+                    lacunarity: 2.1,
+                    springFreq: 0,
+                    springDamping: 0.00,
+                    timeScaleMultiplier: 30.0,  // Moderate speed
+                    timeStep: 0.110,
+                    amplitudeMultiplier: 2.3,
+                    jellyStiffness: 0.71,
+                    jellyDamping: 0.11,
+                    jellyMass: 0.4,
+                    enableJelly: true,
+                    opacity: 1.0
+                };
+                
+                // Keep legacy properties for compatibility (will be updated from selected ring)
+                this.spatialFreq = this.magentaParams.spatialFreq;
+                this.invertedCellSize = 6;
+                this.noiseOctaves = this.magentaParams.noiseOctaves;
+                this.noisePersistence = this.magentaParams.noisePersistence;
+                this.lacunarity = this.magentaParams.lacunarity;
+                this.springFreq = this.magentaParams.springFreq;
+                this.springDamping = this.magentaParams.springDamping;
+                this.timeScaleMultiplier = this.magentaParams.timeScaleMultiplier;
+                this.timeStep = this.magentaParams.timeStep;
+                this.amplitudeMultiplier = this.magentaParams.amplitudeMultiplier;
+                this.currentTime = 0;
+                
+                // Separate time counters for each ring
+                this.magentaCurrentTime = 0;
+                this.cyanCurrentTime = 0;
+                this.yellowCurrentTime = 0;
+                this.magentaLinesCurrentTime = 0;
+                this.blueDotsCurrentTime = 0;
+                
+                // Jelly physics parameters
+                this.jellyStiffness = this.magentaParams.jellyStiffness;
+                this.jellyDamping = this.magentaParams.jellyDamping;
+                this.jellyMass = this.magentaParams.jellyMass;
+                this.enableJelly = this.magentaParams.enableJelly;
+                
+                // Separate jelly physics state arrays for each ring
+                this.magentaJellyPositions = new Array(this.numPoints).fill(0);
+                this.magentaJellyVelocities = new Array(this.numPoints).fill(0);
+                this.magentaJellyTargets = new Array(this.numPoints).fill(0);
+                
+                this.cyanJellyPositions = new Array(this.numPoints).fill(0);
+                this.cyanJellyVelocities = new Array(this.numPoints).fill(0);
+                this.cyanJellyTargets = new Array(this.numPoints).fill(0);
+                
+                this.yellowJellyPositions = new Array(this.numPoints).fill(0);
+                this.yellowJellyVelocities = new Array(this.numPoints).fill(0);
+                this.yellowJellyTargets = new Array(this.numPoints).fill(0);
+                
+                this.magentaLinesJellyPositions = new Array(this.numLinesPoints).fill(0);
+                this.magentaLinesJellyVelocities = new Array(this.numLinesPoints).fill(0);
+                this.magentaLinesJellyTargets = new Array(this.numLinesPoints).fill(0);
+                
+                this.blueDotsJellyPositions = new Array(this.numBlueDotsPoints).fill(0);
+                this.blueDotsJellyVelocities = new Array(this.numBlueDotsPoints).fill(0);
+                this.blueDotsJellyTargets = new Array(this.numBlueDotsPoints).fill(0);
+                
+                // Legacy arrays (will point to selected ring)
+                this.jellyPositions = this.magentaJellyPositions;
+                this.jellyVelocities = this.magentaJellyVelocities;
+                this.jellyTargets = this.magentaJellyTargets;
+                
+                // Ring visibility states (separate from opacity parameter)
+                this.ringVisibility = {
+                    magenta: true,
+                    cyan: true,
+                    yellow: true,
+                    magentaLines: true,
+                    blueDots: true
+                };
+                
+                this.init();
+            }
+
+            // Proper 2D Perlin noise implementation for smooth time animation
+            perlinNoise2D(x, y) {
+                // Get integer and fractional parts for both dimensions
+                const xi = Math.floor(x);
+                const yi = Math.floor(y);
+                const xf = x - xi;
+                const yf = y - yi;
+                
+                // Get gradient vectors at the four grid corners
+                const grad00 = this.getGradient2D(xi, yi);
+                const grad10 = this.getGradient2D(xi + 1, yi);
+                const grad01 = this.getGradient2D(xi, yi + 1);
+                const grad11 = this.getGradient2D(xi + 1, yi + 1);
+                
+                // Calculate distance vectors from each corner
+                const dist00 = [xf, yf];
+                const dist10 = [xf - 1, yf];
+                const dist01 = [xf, yf - 1];
+                const dist11 = [xf - 1, yf - 1];
+                
+                // Calculate dot products
+                const dot00 = grad00[0] * dist00[0] + grad00[1] * dist00[1];
+                const dot10 = grad10[0] * dist10[0] + grad10[1] * dist10[1];
+                const dot01 = grad01[0] * dist01[0] + grad01[1] * dist01[1];
+                const dot11 = grad11[0] * dist11[0] + grad11[1] * dist11[1];
+                
+                // Apply fade functions for smooth interpolation: 6t⁵ - 15t⁴ + 10t³
+                const fadeX = xf * xf * xf * (xf * (xf * 6 - 15) + 10);
+                const fadeY = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
+                
+                // Bi-linear interpolation
+                const lerpX1 = dot00 + fadeX * (dot10 - dot00);
+                const lerpX2 = dot01 + fadeX * (dot11 - dot01);
+                const result = lerpX1 + fadeY * (lerpX2 - lerpX1);
+                
+                return result;
+            }
+            
+            // Generate consistent 2D gradient vectors for grid points
+            getGradient2D(gridX, gridY) {
+                // Hash function to get consistent gradients for 2D
+                let hash = ((gridX * 374761393) + (gridY * 668265263) + (this.perlinSeed * 1274126177)) % 1073741824;
+                hash = ((hash ^ (hash >> 13)) * 1274126177) % 1073741824;
+                
+                // Convert to angle and create unit gradient vector
+                const angle = (hash / 1073741824.0) * 2 * Math.PI;
+                return [Math.cos(angle), Math.sin(angle)];
+            }
+            
+            // Generate consistent gradient values for grid points (1D)
+            getGradient(gridPoint) {
+                // Simple hash function to get consistent gradients
+                let hash = ((gridPoint * 374761393) + (this.perlinSeed * 668265263)) % 1073741824;
+                hash = ((hash ^ (hash >> 13)) * 1274126177) % 1073741824;
+                
+                // Convert to gradient value between -1 and 1
+                return (hash / 536870912.0) - 1.0;
+            }
+
+            // Generate smooth 2D noise with interpolation (Fractal Brownian Motion)
+            smoothNoise2D(x, y, octaves = 4, persistence = 0.5, lacunarity = 2.0) {
+                let value = 0;
+                let amplitude = 1;
+                let frequency = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    value += this.perlinNoise2D(x * frequency, y * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= lacunarity;
+                }
+
+                return value / maxValue;
+            }
+
+            // Generate smooth noise with interpolation (Fractal Brownian Motion)
+            smoothNoise(x, octaves = 4, persistence = 0.5, lacunarity = 2.0) {
+                let value = 0;
+                let amplitude = 1;
+                let frequency = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    value += this.perlinNoise(x * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= lacunarity; // Use lacunarity instead of fixed *2
+                }
+
+                return value / maxValue;
+            }
+
+            // Generate irregular timeScale for organic timing variations
+            generateIrregularTimeScale(baseTimeScale) {
+                // If baseTimeScale is zero or very close to zero, return zero (no movement)
+                if (baseTimeScale <= 0.0001) {
+                    return 0;
+                }
+                
+                const time = Date.now() * 0.001; // Slow variation
+                
+                // Use low frequency noise to vary the timeScale irregularly
+                const timeVariation = this.smoothNoise(
+                    time * 0.1, // Very slow frequency for gradual changes
+                    2, // Few octaves for smooth variation
+                    0.6,
+                    2.0 // Standard lacunarity for time variation
+                );
+                
+                // Vary timeScale by ±30% based on noise
+                const variation = 1 + (timeVariation * 0.3);
+                return baseTimeScale * variation;
+            }
+
+            // Generate distortion amplitudes using 2D Perlin noise with jelly physics
+            generateNoiseDistortions(baseAmplitude, noiseOffset, baseTimeScale = 0.001, currentTime = null, numPoints = null) {
+                const pointCount = numPoints || this.numPoints;
+                const targetAmplitudes = [];
+                
+                // Use provided time or fall back to legacy currentTime
+                const timeToUse = currentTime !== null ? currentTime : this.currentTime;
+                
+                // Debug logging (only occasionally to avoid spam)
+                if (Math.random() < 0.05) { // Log ~5% of the time for more frequent debugging
+                    console.log('Noise Debug:', {
+                        baseTimeScale,
+                        timeScaleMultiplier: this.timeScaleMultiplier,
+                        timeStep: this.timeStep,
+                        currentTime: timeToUse.toFixed(3),
+                        spatialFreq: this.spatialFreq.toFixed(6),
+                        cellSize: (1/this.spatialFreq).toFixed(1),
+                        octaves: this.noiseOctaves,
+                        persistence: this.noisePersistence,
+                        jellyStiffness: this.jellyStiffness,
+                        jellyDamping: this.jellyDamping,
+                        numPoints: pointCount
+                    });
+                }
+                
+                // Calculate the target amplitudes from noise
+                for (let i = 0; i < pointCount; i++) {
+                    // Spatial position around the ring (0 to 2π mapped to noise space)
+                    const spatialPos = (i / pointCount) * 6.28;
+                    
+                    // Use 2D noise with spatial position and time as separate dimensions
+                    const lowFreqNoise = this.smoothNoise2D(
+                        spatialPos * this.spatialFreq + noiseOffset, // Spatial dimension
+                        timeToUse, // Time dimension (separate!)
+                        this.noiseOctaves,
+                        this.noisePersistence,
+                        this.lacunarity
+                    );
+                    
+                    // SPRINGY OSCILLATION - use UI-controlled parameters
+                    const springPhase = spatialPos * 2.0 + noiseOffset * 0.5;
+                    const springOscillation = Math.sin(timeToUse * this.springFreq + springPhase);
+                    
+                    // Apply UI-controlled damping
+                    const springEffect = springOscillation * this.springDamping;
+                    
+                    // Combine: base noise + springy oscillation
+                    const combinedEffect = lowFreqNoise + (springEffect * Math.abs(lowFreqNoise));
+                    
+                    // Calculate target amplitude - ALWAYS OUTWARD (absolute value)
+                    targetAmplitudes.push(Math.abs(combinedEffect) * baseAmplitude * this.amplitudeMultiplier);
+                }
+                
+                // Apply jelly physics to get smooth, bouncy deformations
+                if (this.enableJelly) {
+                    const deltaTime = this.timeStep * 0.5; // Use smaller timestep for more responsive physics
+                    const jellyAmplitudes = this.updateJellyPhysics(targetAmplitudes, deltaTime);
+                    return jellyAmplitudes;
+                } else {
+                    // Return direct noise values without jelly physics
+                    return targetAmplitudes;
+                }
+            }
+
+            // Generate distortion amplitudes using 2D Perlin noise with time as separate dimension (INVERTED - inward)
+            generateInvertedNoiseDistortions(baseAmplitude, noiseOffset, baseTimeScale = 0.001, numPoints = this.numPoints, currentTime = null) {
+                const amplitudes = [];
+                
+                // Use provided time or fall back to legacy currentTime
+                const timeToUse = currentTime !== null ? currentTime : this.currentTime;
+                
+                for (let i = 0; i < numPoints; i++) {
+                    // Spatial position around the ring (0 to 2π mapped to noise space)
+                    const spatialPos = (i / numPoints) * 6.28;
+                    
+                    // Use 2D noise with spatial position and time as separate dimensions
+                    // Use inverted cell size for different noise pattern
+                    const invertedSpatialFreq = 1 / this.invertedCellSize;
+                    const lowFreqNoise = this.smoothNoise2D(
+                        spatialPos * invertedSpatialFreq + noiseOffset, // Spatial dimension with inverted cell size
+                        timeToUse, // Time dimension (separate!)
+                        this.noiseOctaves,
+                        this.noisePersistence,
+                        this.lacunarity
+                    );
+                    
+                    // SPRINGY OSCILLATION - use UI-controlled parameters
+                    const springPhase = spatialPos * 2.0 + noiseOffset * 0.5;
+                    const springOscillation = Math.sin(timeToUse * this.springFreq + springPhase);
+                    
+                    // Apply UI-controlled damping
+                    const springEffect = springOscillation * this.springDamping;
+                    
+                    // Combine: base noise + springy oscillation
+                    const combinedEffect = lowFreqNoise + (springEffect * Math.abs(lowFreqNoise));
+                    
+                    // Apply base amplitude with UI multiplier - ALWAYS INWARD (negative absolute value)
+                    amplitudes.push(-Math.abs(combinedEffect) * baseAmplitude * this.amplitudeMultiplier);
+                }
+                
+                return amplitudes;
+            }
+
+            // Generate circle path with normal-based distortions
+            generatePath(outerDistortions, innerDistortions, outerRadius = this.outerRadius, innerRadius = this.innerRadius, outerNumPoints = this.numPoints, innerNumPoints = this.numPoints) {
+                const outerPoints = [];
+                const innerPoints = [];
+                
+                // Generate outer ring points
+                for (let i = 0; i < outerNumPoints; i++) {
+                    const angle = (i / outerNumPoints) * 2 * Math.PI;
+                    const distortion = outerDistortions[i] || 0;
+                    const radius = outerRadius + distortion;
+                    
+                    const x = this.centerX + radius * Math.cos(angle);
+                    const y = this.centerY + radius * Math.sin(angle);
+                    outerPoints.push({ x, y, angle });
+                }
+                
+                // Generate inner ring points  
+                for (let i = 0; i < innerNumPoints; i++) {
+                    const angle = (i / innerNumPoints) * 2 * Math.PI;
+                    const distortion = innerDistortions[i] || 0;
+                    const radius = innerRadius + distortion;
+                    
+                    const x = this.centerX + radius * Math.cos(angle);
+                    const y = this.centerY + radius * Math.sin(angle);
+                    innerPoints.push({ x, y, angle });
+                }
+                
+                // Create smooth cubic bezier path for outer ring
+                let outerPath = `M${outerPoints[0].x} ${outerPoints[0].y}`;
+                
+                for (let i = 0; i < outerNumPoints; i++) {
+                    const current = outerPoints[i];
+                    const next = outerPoints[(i + 1) % outerNumPoints];
+                    
+                    // Calculate control points for smooth curve
+                    const controlDistance = 0.4 * Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2);
+                    
+                    // Control point 1 (tangent from current point)
+                    const cp1x = current.x + controlDistance * Math.cos(current.angle + Math.PI/2);
+                    const cp1y = current.y + controlDistance * Math.sin(current.angle + Math.PI/2);
+                    
+                    // Control point 2 (tangent to next point)  
+                    const cp2x = next.x - controlDistance * Math.cos(next.angle + Math.PI/2);
+                    const cp2y = next.y - controlDistance * Math.sin(next.angle + Math.PI/2);
+                    
+                    outerPath += ` C${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+                }
+                outerPath += ' Z';
+                
+                // Create smooth cubic bezier path for inner ring (reverse direction for proper fill-rule)
+                let innerPath = `M${innerPoints[0].x} ${innerPoints[0].y}`;
+                
+                for (let i = innerNumPoints - 1; i >= 0; i--) {
+                    const current = innerPoints[i];
+                    const next = innerPoints[i === 0 ? innerNumPoints - 1 : i - 1];
+                    
+                    // Calculate control points for smooth curve
+                    const controlDistance = 0.4 * Math.sqrt((next.x - current.x) ** 2 + (next.y - current.y) ** 2);
+                    
+                    // Control point 1 (tangent from current point)
+                    const cp1x = current.x - controlDistance * Math.cos(current.angle + Math.PI/2);
+                    const cp1y = current.y - controlDistance * Math.sin(current.angle + Math.PI/2);
+                    
+                    // Control point 2 (tangent to next point)
+                    const cp2x = next.x + controlDistance * Math.cos(next.angle + Math.PI/2);
+                    const cp2y = next.y + controlDistance * Math.sin(next.angle + Math.PI/2);
+                    
+                    if (i === innerNumPoints - 1) {
+                        innerPath = `M${current.x} ${current.y}`;
+                    }
+                    innerPath += ` C${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+                }
+                innerPath += ' Z';
+                
+                return `${outerPath} ${innerPath}`;
+            }
+            
+            // Generate perpendicular lines ring
+            generatePerpedicularLines(outerDistortions, innerDistortions) {
+                const lines = [];
+                
+                for (let i = 0; i < this.numLinesPoints; i++) {
+                    const angle = (i / this.numLinesPoints) * 2 * Math.PI;
+                    
+                    // Calculate outer and inner points with distortions
+                    const outerDistortion = outerDistortions[i] || 0;
+                    const innerDistortion = innerDistortions[i] || 0;
+                    const outerRadius = this.outerRadius + outerDistortion;
+                    const innerRadius = this.innerRadius + innerDistortion;
+                    
+                    // Calculate the actual positions
+                    const outerX = this.centerX + outerRadius * Math.cos(angle);
+                    const outerY = this.centerY + outerRadius * Math.sin(angle);
+                    const innerX = this.centerX + innerRadius * Math.cos(angle);
+                    const innerY = this.centerY + innerRadius * Math.sin(angle);
+                    
+                    // Create line from inner to outer point
+                    lines.push({
+                        x1: innerX,
+                        y1: innerY,
+                        x2: outerX,
+                        y2: outerY
+                    });
+                }
+                
+                return lines;
+            }
+            
+            // Update the SVG lines in the magenta lines ring
+            updateMagentaLinesRing(lines) {
+                // Clear existing lines
+                this.magentaLinesRing.innerHTML = '';
+                
+                // Create new lines
+                lines.forEach((line, index) => {
+                    const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    lineElement.setAttribute('x1', line.x1);
+                    lineElement.setAttribute('y1', line.y1);
+                    lineElement.setAttribute('x2', line.x2);
+                    lineElement.setAttribute('y2', line.y2);
+                    lineElement.setAttribute('stroke', '#F05B8E');
+                    lineElement.setAttribute('stroke-width', '2');
+                    lineElement.setAttribute('stroke-linecap', 'round');
+                    this.magentaLinesRing.appendChild(lineElement);
+                });
+            }
+
+            // Draw Perlin noise visualization
+            drawNoiseVisualization() {
+                const ctx = this.noiseCtx;
+                const width = this.noiseCanvas.width;
+                const height = this.noiseCanvas.height;
+                const centerX = width / 2; // Center in the larger canvas
+                const centerY = height / 2; // Center in the larger canvas
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+                
+                // Get current time and state parameters - EXACT same as rings
+                let outerBaseAmplitude, outerTimeScale;
+                
+                switch(this.currentState) {
+                    case 'idle':
+                        outerBaseAmplitude = 16;
+                        outerTimeScale = 0.04;
+                        break;
+                    case 'thinking':
+                        outerBaseAmplitude = 32;
+                        outerTimeScale = 0.08;
+                        break;
+                    case 'responding':
+                        outerBaseAmplitude = 80;
+                        outerTimeScale = 0.15;
+                        break;
+                }
+                
+                // Apply 2x for magenta in responding state (same as actual rings)
+                let magentaAmplitude = outerBaseAmplitude;
+                if (this.currentState === 'responding') {
+                    magentaAmplitude = outerBaseAmplitude * 2;
+                }
+                
+                const irregularTimeScale = this.generateIrregularTimeScale(outerTimeScale * this.timeScaleMultiplier);
+                const time = Date.now() * irregularTimeScale;
+                
+                // Draw at EXACT same scale as rings
+                const numSamples = this.numPoints; // Use SAME 8 control points as Ring A
+                const actualOuterRadius = 150; // EXACT same as rings
+                const actualInnerRadius = 145; // EXACT same as rings
+                
+                // Draw actual outer ring boundary (reference)
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, actualOuterRadius, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Draw actual inner ring boundary (reference)
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, actualInnerRadius, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Generate the EXACT same distortions as Ring A
+                const outerDistortions = this.generateNoiseDistortions(magentaAmplitude, this.outerNoiseOffset, outerTimeScale);
+                
+                // Draw noise control points (same as actual ring)
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+                for (let i = 0; i < numSamples; i++) {
+                    const angle = (i / numSamples) * 2 * Math.PI;
+                    const distortion = outerDistortions[i] || 0;
+                    const radius = actualOuterRadius + distortion;
+                    
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    // Draw control point
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw line to center to show the distortion
+                    ctx.beginPath();
+                    ctx.moveTo(centerX + actualOuterRadius * Math.cos(angle), centerY + actualOuterRadius * Math.sin(angle));
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                // Draw smooth curve connecting the distorted points (approximating bezier)
+                ctx.beginPath();
+                for (let i = 0; i <= numSamples; i++) {
+                    const currentIndex = i % numSamples;
+                    const angle = (currentIndex / numSamples) * 2 * Math.PI;
+                    const distortion = outerDistortions[currentIndex] || 0;
+                    const radius = actualOuterRadius + distortion;
+                    
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Draw labels
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Ring A (Magenta) - 16 Control Points', centerX, 30);
+                ctx.fillText('• Red dots = control points', centerX, 45);
+                ctx.fillText('• Red lines = distortion amounts', centerX, 60);
+                
+                // Draw time scale indicator
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`TimeScale: ${irregularTimeScale.toFixed(3)}`, 10, height - 25);
+                ctx.fillText(`Amplitude: ${magentaAmplitude}px`, 10, height - 10);
+            }
+
+            init() {
+                // Set initial path for magenta ring
+                const basePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.numPoints).fill(0)  // No inner distortions
+                );
+                this.morphingPath.setAttribute('d', basePath);
+                
+                // Set initial path for cyan ring  
+                const cyanBasePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.numPoints).fill(0), // No inner distortions
+                    this.cyanOuterRadius,
+                    this.cyanInnerRadius
+                );
+                this.cyanRingPath.setAttribute('d', cyanBasePath);
+                
+                // Set initial path for inverted magenta ring
+                const invertedMagentaBasePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.innerNumPoints).fill(0), // No inner distortions
+                    this.outerRadius,
+                    this.innerRadius,
+                    this.numPoints,
+                    this.innerNumPoints
+                );
+                this.invertedMagentaRingPath.setAttribute('d', invertedMagentaBasePath);
+                
+                // Set initial path for inverted cyan ring
+                const invertedCyanBasePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.innerNumPoints).fill(0), // No inner distortions
+                    this.cyanOuterRadius,
+                    this.cyanInnerRadius,
+                    this.numPoints,
+                    this.innerNumPoints
+                );
+                this.invertedCyanRingPath.setAttribute('d', invertedCyanBasePath);
+                
+                // Set initial path for yellow ring
+                const yellowBasePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.numPoints).fill(0), // No inner distortions
+                    this.yellowOuterRadius,
+                    this.yellowInnerRadius
+                );
+                this.yellowRingPath.setAttribute('d', yellowBasePath);
+                
+                // Set initial path for inverted yellow ring
+                const invertedYellowBasePath = this.generatePath(
+                    new Array(this.numPoints).fill(0), // No outer distortions
+                    new Array(this.innerNumPoints).fill(0), // No inner distortions
+                    this.yellowOuterRadius,
+                    this.yellowInnerRadius,
+                    this.numPoints,
+                    this.innerNumPoints
+                );
+                this.invertedYellowRingPath.setAttribute('d', invertedYellowBasePath);
+                
+                // Initialize magenta lines ring with base lines
+                const baseLines = this.generatePerpedicularLines(
+                    new Array(this.numLinesPoints).fill(0), // No outer distortions
+                    new Array(this.numLinesPoints).fill(0)  // No inner distortions
+                );
+                this.updateMagentaLinesRing(baseLines);
+                
+                // Initialize blue dots ring with base dots
+                const baseDots = this.generateBlueDots(
+                    new Array(this.numBlueDotsPoints).fill(0) // No outer distortions
+                );
+                this.updateBlueDotsRing(baseDots);
+                
+                this.setupControls();
+                this.setupNoiseControls();
+                this.startContinuousAnimation(); // Start continuous animation for all states
+                this.startAutoCycle();
+            }
+
+            setState(newState) {
+                if (this.isTransitioning || this.currentState === newState) return;
+                
+                this.isTransitioning = true;
+                this.currentState = newState;
+                
+                // Remove all state classes
+                this.container.classList.remove('idle', 'thinking', 'responding');
+                
+                // Add new state class
+                this.container.classList.add(newState);
+                
+                // Update state indicator
+                const stateTexts = {
+                    idle: 'Idle State',
+                    thinking: 'Thinking...',
+                    responding: 'Responding...'
+                };
+                
+                this.stateIndicator.textContent = stateTexts[newState];
+                
+                // Morph the path and change gradient
+                this.morphToState(newState);
+                
+                // Reset transition flag
+                setTimeout(() => {
+                    this.isTransitioning = false;
+                }, 1000);
+            }
+
+            morphToState(state) {
+                const gradientMap = {
+                    idle: 'url(#idleGradient)',
+                    thinking: 'url(#thinkingGradient)',
+                    responding: 'url(#respondingGradient)'
+                };
+
+                const cyanGradientMap = {
+                    idle: 'url(#cyanIdleGradient)',
+                    thinking: 'url(#cyanThinkingGradient)',
+                    responding: 'url(#cyanRespondingGradient)'
+                };
+
+                const yellowGradientMap = {
+                    idle: 'url(#yellowIdleGradient)',
+                    thinking: 'url(#yellowThinkingGradient)',
+                    responding: 'url(#yellowRespondingGradient)'
+                };
+
+                // Progressive increase with much faster timeScale for visible evolution
+                let outerBaseAmplitude, innerBaseAmplitude, outerTimeScale, innerTimeScale;
+                
+                switch(state) {
+                    case 'idle':
+                        // LEVEL 1: Clearly visible evolving distortion (2x amplitude)
+                        outerBaseAmplitude = 16;
+                        innerBaseAmplitude = 10;
+                        outerTimeScale = 0.04; // 4x faster than before
+                        innerTimeScale = 0.035;
+                        break;
+                        
+                    case 'thinking':
+                        // LEVEL 2: 4x magnitude, faster noise evolution
+                        outerBaseAmplitude = 32;
+                        innerBaseAmplitude = 20;
+                        outerTimeScale = 0.08; // 2x faster than idle
+                        innerTimeScale = 0.07;
+                        break;
+                        
+                    case 'responding':
+                        // LEVEL 3: 10x magnitude, very fast noise evolution
+                        outerBaseAmplitude = 80;
+                        innerBaseAmplitude = 50;
+                        outerTimeScale = 0.15; // Very fast evolution
+                        innerTimeScale = 0.13;
+                        break;
+                }
+
+                // Generate noise-based distortions for magenta ring
+                let magentaAmplitude = outerBaseAmplitude;
+                if (state === 'responding') {
+                    magentaAmplitude = outerBaseAmplitude * 2; // 2x distortion for magenta in responding state
+                }
+                const outerDistortions = this.generateNoiseDistortions(magentaAmplitude, this.outerNoiseOffset, outerTimeScale);
+                const innerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                const targetPath = this.generatePath(outerDistortions, innerDistortions);
+
+                // Generate noise-based distortions for cyan ring (independent movement)
+                const cyanOuterDistortions = this.generateNoiseDistortions(outerBaseAmplitude, this.cyanOuterNoiseOffset, outerTimeScale);
+                const cyanInnerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                const cyanTargetPath = this.generatePath(cyanOuterDistortions, cyanInnerDistortions, this.cyanOuterRadius, this.cyanInnerRadius);
+
+                // Generate inverted distortions for inverted rings (25% magnitude, inward on inner edge only)
+                let invertedMagentaAmplitude = outerBaseAmplitude * 0.25;
+                if (state === 'responding') {
+                    invertedMagentaAmplitude = outerBaseAmplitude * 2 * 0.25; // 2x distortion for magenta, then 25%
+                }
+                const invertedMagentaOuterDistortions = new Array(this.numPoints).fill(0); // No outer distortions
+                const invertedMagentaInnerDistortions = this.generateInvertedNoiseDistortions(invertedMagentaAmplitude, this.outerNoiseOffset + 400, outerTimeScale, this.innerNumPoints);
+                const invertedMagentaTargetPath = this.generatePath(invertedMagentaOuterDistortions, invertedMagentaInnerDistortions, this.outerRadius, this.innerRadius, this.numPoints, this.innerNumPoints);
+
+                const invertedCyanOuterDistortions = new Array(this.numPoints).fill(0); // No outer distortions
+                const invertedCyanInnerDistortions = this.generateInvertedNoiseDistortions(outerBaseAmplitude * 0.25, this.cyanOuterNoiseOffset + 400, outerTimeScale, this.innerNumPoints);
+                const invertedCyanTargetPath = this.generatePath(invertedCyanOuterDistortions, invertedCyanInnerDistortions, this.cyanOuterRadius, this.cyanInnerRadius, this.numPoints, this.innerNumPoints);
+
+                // Generate noise-based distortions for yellow ring (independent movement)
+                const yellowOuterDistortions = this.generateNoiseDistortions(outerBaseAmplitude, this.yellowOuterNoiseOffset, outerTimeScale);
+                const yellowInnerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                const yellowTargetPath = this.generatePath(yellowOuterDistortions, yellowInnerDistortions, this.yellowOuterRadius, this.yellowInnerRadius);
+
+                // Generate inverted yellow ring distortions (25% magnitude, inward on inner edge only)
+                const invertedYellowOuterDistortions = new Array(this.numPoints).fill(0); // No outer distortions
+                const invertedYellowInnerDistortions = this.generateInvertedNoiseDistortions(outerBaseAmplitude * 0.25, this.yellowOuterNoiseOffset + 400, outerTimeScale, this.innerNumPoints);
+                const invertedYellowTargetPath = this.generatePath(invertedYellowOuterDistortions, invertedYellowInnerDistortions, this.yellowOuterRadius, this.yellowInnerRadius, this.numPoints, this.innerNumPoints);
+
+                // Animate path morphing for all rings
+                gsap.to(this.morphingPath, {
+                    duration: 1,
+                    attr: { d: targetPath },
+                    ease: "power2.inOut"
+                });
+
+                gsap.to(this.cyanRingPath, {
+                    duration: 1,
+                    attr: { d: cyanTargetPath },
+                    ease: "power2.inOut"
+                });
+
+                gsap.to(this.invertedMagentaRingPath, {
+                    duration: 1,
+                    attr: { d: invertedMagentaTargetPath },
+                    ease: "power2.inOut"
+                });
+
+                gsap.to(this.invertedCyanRingPath, {
+                    duration: 1,
+                    attr: { d: invertedCyanTargetPath },
+                    ease: "power2.inOut"
+                });
+
+                gsap.to(this.yellowRingPath, {
+                    duration: 1,
+                    attr: { d: yellowTargetPath },
+                    ease: "power2.inOut"
+                });
+
+                gsap.to(this.invertedYellowRingPath, {
+                    duration: 1,
+                    attr: { d: invertedYellowTargetPath },
+                    ease: "power2.inOut"
+                });
+
+                // Change gradients for all rings
+                gsap.to(this.morphingPath, {
+                    duration: 0.5,
+                    attr: { fill: gradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.cyanRingPath, {
+                    duration: 0.5,
+                    attr: { fill: cyanGradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.invertedMagentaRingPath, {
+                    duration: 0.5,
+                    attr: { fill: gradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.invertedCyanRingPath, {
+                    duration: 0.5,
+                    attr: { fill: cyanGradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.yellowRingPath, {
+                    duration: 0.5,
+                    attr: { fill: yellowGradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                gsap.to(this.invertedYellowRingPath, {
+                    duration: 0.5,
+                    attr: { fill: yellowGradientMap[state] },
+                    ease: "power2.out"
+                });
+
+                // Add state-specific animations
+                this.addStateEffects(state);
+            }
+
+            addStateEffects(state) {
+                switch(state) {
+                    case 'thinking':
+                        // No pulsing - removed scale animation
+                        break;
+                        
+                    case 'responding':
+                        // No pulsing - removed scale animation
+                        break;
+                        
+                    case 'idle':
+                        // Stop any existing animations and return to normal
+                        gsap.killTweensOf([this.morphingPath, this.cyanRingPath, this.invertedMagentaRingPath, this.invertedCyanRingPath, this.yellowRingPath, this.invertedYellowRingPath]);
+                        gsap.to([this.morphingPath, this.cyanRingPath, this.invertedMagentaRingPath, this.invertedCyanRingPath, this.yellowRingPath, this.invertedYellowRingPath], {
+                            duration: 0.5,
+                            scale: 1,
+                            ease: "power2.out"
+                        });
+                        break;
+                }
+            }
+
+            startContinuousAnimation() {
+                // CONTINUOUSLY FLOWING: Noise moves through time space for visible evolution
+                const animate = () => {
+                    if (!this.isTransitioning) {
+                        let outerBaseAmplitude, innerBaseAmplitude, outerTimeScale, innerTimeScale, animationDuration;
+                        
+                        switch(this.currentState) {
+                            case 'idle':
+                                // LEVEL 1: Clearly visible evolving distortion (2x amplitude)
+                                outerBaseAmplitude = 16;
+                                innerBaseAmplitude = 10;
+                                outerTimeScale = 0.04; // 4x faster than before
+                                innerTimeScale = 0.035;
+                                animationDuration = 0.6 / Math.max(this.timeScaleMultiplier, 0.01); // Adjust duration by time scale
+                                break;
+                                
+                            case 'thinking':
+                                // LEVEL 2: 4x magnitude, faster noise evolution
+                                outerBaseAmplitude = 32;
+                                innerBaseAmplitude = 20;
+                                outerTimeScale = 0.08; // 2x faster than idle
+                                innerTimeScale = 0.07;
+                                animationDuration = 0.4 / Math.max(this.timeScaleMultiplier, 0.01); // Adjust duration by time scale
+                                break;
+                                
+                            case 'responding':
+                                // LEVEL 3: 10x magnitude, very fast noise evolution
+                                outerBaseAmplitude = 80;
+                                innerBaseAmplitude = 50;
+                                outerTimeScale = 0.15; // Very fast evolution
+                                innerTimeScale = 0.13;
+                                animationDuration = 0.2 / Math.max(this.timeScaleMultiplier, 0.01); // Adjust duration by time scale
+                                break;
+                        }
+                        
+                        // Debug logging for animation timing
+                        if (Math.random() < 0.02) { // Log occasionally
+                            console.log('Animation Timing:', {
+                                timeScaleMultiplier: this.timeScaleMultiplier,
+                                calculatedDuration: animationDuration.toFixed(3),
+                                state: this.currentState
+                            });
+                        }
+                        
+                        // Generate continuously evolving distortions - noise advances through time
+                        let magentaAmplitude = outerBaseAmplitude;
+                        if (this.currentState === 'responding') {
+                            magentaAmplitude = outerBaseAmplitude * 2; // 2x distortion for magenta in responding state
+                        }
+                        
+                        // Increment time for each ring independently
+                        const magentaTime = this.incrementRingTime('magenta');
+                        const cyanTime = this.incrementRingTime('cyan');
+                        const yellowTime = this.incrementRingTime('yellow');
+                        const magentaLinesTime = this.incrementRingTime('magentaLines');
+                        const blueDotsTime = this.incrementRingTime('blueDots');
+                        
+                        // Use magenta ring parameters for magenta ring
+                        this.updateLegacyPropertiesForRing('magenta');
+                        const outerDistortions = this.generateNoiseDistortions(magentaAmplitude, this.outerNoiseOffset, outerTimeScale, magentaTime);
+                        const innerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                        const targetPath = this.generatePath(outerDistortions, innerDistortions);
+                        
+                        // Use cyan ring parameters for cyan ring
+                        this.updateLegacyPropertiesForRing('cyan');
+                        const cyanOuterDistortions = this.generateNoiseDistortions(outerBaseAmplitude, this.cyanOuterNoiseOffset, outerTimeScale, cyanTime);
+                        const cyanInnerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                        const cyanTargetPath = this.generatePath(cyanOuterDistortions, cyanInnerDistortions, this.cyanOuterRadius, this.cyanInnerRadius);
+
+                        // Use yellow ring parameters for yellow ring
+                        this.updateLegacyPropertiesForRing('yellow');
+                        const yellowOuterDistortions = this.generateNoiseDistortions(outerBaseAmplitude, this.yellowOuterNoiseOffset, outerTimeScale, yellowTime);
+                        const yellowInnerDistortions = new Array(this.numPoints).fill(0); // No distortions for inner ring
+                        const yellowTargetPath = this.generatePath(yellowOuterDistortions, yellowInnerDistortions, this.yellowOuterRadius, this.yellowInnerRadius);
+                        
+                        // Use magenta lines parameters for magenta lines ring
+                        this.updateLegacyPropertiesForRing('magentaLines');
+                        const magentaLinesOuterDistortions = this.generateNoiseDistortions(magentaAmplitude, this.outerNoiseOffset + 800, outerTimeScale, magentaLinesTime, this.numLinesPoints);
+                        const magentaLinesInnerDistortions = new Array(this.numLinesPoints).fill(0); // No inner distortions
+                        const magentaLines = this.generatePerpedicularLines(magentaLinesOuterDistortions, magentaLinesInnerDistortions);
+                        
+                        // Use blue dots parameters for blue dots ring
+                        this.updateLegacyPropertiesForRing('blueDots');
+                        const blueDotsOuterDistortions = this.generateNoiseDistortions(outerBaseAmplitude, this.outerNoiseOffset + 1200, outerTimeScale, blueDotsTime, this.numBlueDotsPoints);
+                        const blueDots = this.generateBlueDots(blueDotsOuterDistortions);
+                        
+                        // Debug magenta lines occasionally
+                        if (Math.random() < 0.02) { // 2% chance
+                            console.log('Magenta Lines Animation Debug:', {
+                                distortionsGenerated: magentaLinesOuterDistortions.length,
+                                linesGenerated: magentaLines.length,
+                                sampleDistortions: magentaLinesOuterDistortions.slice(0, 5),
+                                currentParams: {
+                                    cellSize: 1 / this.spatialFreq,
+                                    amplitude: this.amplitudeMultiplier,
+                                    timeScale: this.timeScaleMultiplier,
+                                    jellyEnabled: this.enableJelly,
+                                    stiffness: this.jellyStiffness
+                                }
+                            });
+                        }
+
+                        // Restore current ring parameters
+                        this.updateLegacyProperties();
+                        
+                        gsap.to(this.morphingPath, {
+                            duration: animationDuration,
+                            attr: { d: targetPath },
+                            ease: "sine.inOut",
+                            onComplete: () => {
+                                // Immediately continue - noise keeps flowing
+                                animate();
+                            }
+                        });
+                        
+                        // Apply magenta ring opacity
+                        this.morphingPath.style.opacity = this.ringVisibility.magenta ? this.magentaParams.opacity : 0;
+
+                        gsap.to(this.cyanRingPath, {
+                            duration: animationDuration,
+                            attr: { d: cyanTargetPath },
+                            ease: "sine.inOut"
+                        });
+                        
+                        // Apply cyan ring opacity
+                        this.cyanRingPath.style.opacity = this.ringVisibility.cyan ? this.cyanParams.opacity : 0;
+
+                        gsap.to(this.yellowRingPath, {
+                            duration: animationDuration,
+                            attr: { d: yellowTargetPath },
+                            ease: "sine.inOut"
+                        });
+                        
+                        // Apply yellow ring opacity
+                        this.yellowRingPath.style.opacity = this.ringVisibility.yellow ? this.yellowParams.opacity : 0;
+                        
+                        // Update magenta lines ring immediately (no GSAP needed for lines)
+                        this.updateMagentaLinesRing(magentaLines);
+                        
+                        // Apply magenta lines opacity
+                        this.magentaLinesRing.style.opacity = this.ringVisibility.magentaLines ? this.magentaLinesParams.opacity : 0;
+
+                        // Update blue dots ring immediately (no GSAP needed for dots)
+                        this.updateBlueDotsRing(blueDots);
+                        
+                        // Apply blue dots opacity
+                        this.blueDotsRing.style.opacity = this.ringVisibility.blueDots ? this.blueDotsParams.opacity : 0;
+
+                        // Update noise visualization
+                        this.drawNoiseVisualization();
+                    } else {
+                        // Quick retry during transitions
+                        setTimeout(animate, 25);
+                    }
+                };
+                
+                // Start flowing noise animation immediately
+                animate();
+            }
+
+            startIdleAnimation() {
+                // This method is now handled by startContinuousAnimation
+                // Keeping for compatibility but delegating to continuous system
+                return;
+            }
+
+            setupControls() {
+                // Mouse interactions
+                this.container.addEventListener('click', () => {
+                    this.cycleStates();
+                });
+
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case '1': this.setState('idle'); break;
+                        case '2': this.setState('thinking'); break;
+                        case '3': this.setState('responding'); break;
+                        case ' ': 
+                            e.preventDefault();
+                            this.cycleStates(); 
+                            break;
+                    }
+                });
+
+                // Ring Selector
+                const ringSelectorControl = document.getElementById('ringSelector');
+                ringSelectorControl.addEventListener('change', (e) => {
+                    this.currentRing = e.target.value;
+                    this.switchToRing(this.currentRing);
+                    console.log('Switched to editing:', this.currentRing);
+                    this.updateDebugInfo();
+                });
+                
+                // Ring visibility toggles
+                document.getElementById('showMagenta').addEventListener('change', (e) => {
+                    this.ringVisibility.magenta = e.target.checked;
+                });
+                
+                document.getElementById('showCyan').addEventListener('change', (e) => {
+                    this.ringVisibility.cyan = e.target.checked;
+                });
+                
+                document.getElementById('showYellow').addEventListener('change', (e) => {
+                    this.ringVisibility.yellow = e.target.checked;
+                });
+                
+                document.getElementById('showMagentaLines').addEventListener('change', (e) => {
+                    this.ringVisibility.magentaLines = e.target.checked;
+                });
+                
+                document.getElementById('showBlueDots').addEventListener('change', (e) => {
+                    this.ringVisibility.blueDots = e.target.checked;
+                });
+                
+                // Cell Size (larger = smoother)
+                const cellSizeControl = document.getElementById('cellSize');
+                const cellSizeDisplay = cellSizeControl.nextElementSibling;
+                cellSizeControl.addEventListener('input', (e) => {
+                    const cellSize = parseFloat(e.target.value);
+                    const spatialFreq = 1 / cellSize;
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.spatialFreq = spatialFreq;
+                    
+                    // Update legacy property for immediate effect
+                    this.spatialFreq = spatialFreq;
+                    
+                    cellSizeDisplay.textContent = cellSize.toFixed(1);
+                    console.log(`${this.currentRing} Cell Size changed to:`, cellSize, 'Spatial Freq:', spatialFreq);
+                    this.updateDebugInfo();
+                });
+
+                // Inverted Ring Cell Size
+                const invertedCellSizeControl = document.getElementById('invertedCellSize');
+                const invertedCellSizeDisplay = invertedCellSizeControl.nextElementSibling;
+                invertedCellSizeControl.addEventListener('input', (e) => {
+                    const invertedCellSize = parseFloat(e.target.value);
+                    this.invertedCellSize = invertedCellSize;
+                    invertedCellSizeDisplay.textContent = invertedCellSize.toFixed(1);
+                    console.log('Inverted Cell Size changed to:', invertedCellSize);
+                    this.updateDebugInfo();
+                });
+
+                // Noise Octaves
+                const octavesControl = document.getElementById('noiseOctaves');
+                const octavesDisplay = octavesControl.nextElementSibling;
+                octavesControl.addEventListener('input', (e) => {
+                    const noiseOctaves = parseInt(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.noiseOctaves = noiseOctaves;
+                    
+                    // Update legacy property for immediate effect  
+                    this.noiseOctaves = noiseOctaves;
+                    
+                    octavesDisplay.textContent = noiseOctaves;
+                    console.log(`${this.currentRing} Octaves changed to:`, noiseOctaves);
+                    this.updateDebugInfo();
+                });
+
+                // Noise Persistence
+                const persistenceControl = document.getElementById('noisePersistence');
+                const persistenceDisplay = persistenceControl.nextElementSibling;
+                persistenceControl.addEventListener('input', (e) => {
+                    const noisePersistence = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.noisePersistence = noisePersistence;
+                    
+                    // Update legacy property for immediate effect
+                    this.noisePersistence = noisePersistence;
+                    
+                    persistenceDisplay.textContent = noisePersistence.toFixed(2);
+                    console.log(`${this.currentRing} Persistence changed to:`, noisePersistence);
+                    this.updateDebugInfo();
+                });
+
+                // Lacunarity
+                const lacunarityControl = document.getElementById('lacunarity');
+                const lacunarityDisplay = lacunarityControl.nextElementSibling;
+                lacunarityControl.addEventListener('input', (e) => {
+                    const lacunarity = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.lacunarity = lacunarity;
+                    
+                    // Update legacy property for immediate effect
+                    this.lacunarity = lacunarity;
+                    
+                    lacunarityDisplay.textContent = lacunarity.toFixed(1);
+                    console.log(`${this.currentRing} Lacunarity changed to:`, lacunarity);
+                    this.updateDebugInfo();
+                });
+
+                // Spring Frequency
+                const springFreqControl = document.getElementById('springFreq');
+                const springFreqDisplay = springFreqControl.nextElementSibling;
+                springFreqControl.addEventListener('input', (e) => {
+                    const springFreq = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.springFreq = springFreq;
+                    
+                    // Update legacy property for immediate effect
+                    this.springFreq = springFreq;
+                    
+                    springFreqDisplay.textContent = springFreq;
+                    console.log(`${this.currentRing} Spring Freq changed to:`, springFreq);
+                    this.updateDebugInfo();
+                });
+
+                // Spring Damping
+                const springDampingControl = document.getElementById('springDamping');
+                const springDampingDisplay = springDampingControl.nextElementSibling;
+                springDampingControl.addEventListener('input', (e) => {
+                    const springDamping = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.springDamping = springDamping;
+                    
+                    // Update legacy property for immediate effect
+                    this.springDamping = springDamping;
+                    
+                    springDampingDisplay.textContent = springDamping.toFixed(2);
+                    this.updateDebugInfo();
+                });
+
+                // Time Scale Multiplier
+                const timeScaleControl = document.getElementById('timeScale');
+                const timeScaleDisplay = timeScaleControl.nextElementSibling;
+                timeScaleControl.addEventListener('input', (e) => {
+                    const timeScaleMultiplier = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.timeScaleMultiplier = timeScaleMultiplier;
+                    
+                    // Update legacy property for immediate effect
+                    this.timeScaleMultiplier = timeScaleMultiplier;
+                    
+                    timeScaleDisplay.textContent = timeScaleMultiplier.toFixed(1);
+                    console.log(`${this.currentRing} Time Scale changed to:`, timeScaleMultiplier);
+                    this.updateDebugInfo();
+                });
+
+                // Time Step (animation smoothness)
+                const timeStepControl = document.getElementById('timeStep');
+                const timeStepDisplay = timeStepControl.nextElementSibling;
+                timeStepControl.addEventListener('input', (e) => {
+                    const timeStep = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.timeStep = timeStep;
+                    
+                    // Update legacy property for immediate effect
+                    this.timeStep = timeStep;
+                    
+                    timeStepDisplay.textContent = timeStep.toFixed(3);
+                    console.log(`${this.currentRing} Time Step changed to:`, timeStep);
+                    this.updateDebugInfo();
+                });
+
+                // Amplitude Multiplier
+                const amplitudeControl = document.getElementById('amplitudeMultiplier');
+                const amplitudeDisplay = amplitudeControl.nextElementSibling;
+                amplitudeControl.addEventListener('input', (e) => {
+                    const amplitudeMultiplier = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.amplitudeMultiplier = amplitudeMultiplier;
+                    
+                    // Update legacy property for immediate effect
+                    this.amplitudeMultiplier = amplitudeMultiplier;
+                    
+                    amplitudeDisplay.textContent = amplitudeMultiplier.toFixed(1);
+                    console.log(`${this.currentRing} Amplitude changed to:`, amplitudeMultiplier);
+                    this.updateDebugInfo();
+                });
+                
+                // Ring Opacity
+                const ringOpacityControl = document.getElementById('ringOpacity');
+                const ringOpacityDisplay = ringOpacityControl.nextElementSibling;
+                ringOpacityControl.addEventListener('input', (e) => {
+                    const ringOpacity = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.opacity = ringOpacity;
+                    
+                    // Update legacy property for immediate effect
+                    this.opacity = ringOpacity;
+                    
+                    ringOpacityDisplay.textContent = ringOpacity.toFixed(2);
+                    console.log(`${this.currentRing} Ring Opacity changed to:`, ringOpacity);
+                    this.updateDebugInfo();
+                });
+                
+                // Jelly Stiffness
+                const jellyStiffnessControl = document.getElementById('jellyStiffness');
+                const jellyStiffnessDisplay = jellyStiffnessControl.nextElementSibling;
+                jellyStiffnessControl.addEventListener('input', (e) => {
+                    const jellyStiffness = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.jellyStiffness = jellyStiffness;
+                    
+                    // Update legacy property for immediate effect
+                    this.jellyStiffness = jellyStiffness;
+                    
+                    jellyStiffnessDisplay.textContent = jellyStiffness.toFixed(2);
+                    console.log(`${this.currentRing} Jelly Stiffness changed to:`, jellyStiffness);
+                    this.updateDebugInfo();
+                });
+                
+                // Jelly Damping
+                const jellyDampingControl = document.getElementById('jellyDamping');
+                const jellyDampingDisplay = jellyDampingControl.nextElementSibling;
+                jellyDampingControl.addEventListener('input', (e) => {
+                    const jellyDamping = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.jellyDamping = jellyDamping;
+                    
+                    // Update legacy property for immediate effect
+                    this.jellyDamping = jellyDamping;
+                    
+                    jellyDampingDisplay.textContent = jellyDamping.toFixed(2);
+                    console.log(`${this.currentRing} Jelly Damping changed to:`, jellyDamping);
+                    this.updateDebugInfo();
+                });
+                
+                // Jelly Mass
+                const jellyMassControl = document.getElementById('jellyMass');
+                const jellyMassDisplay = jellyMassControl.nextElementSibling;
+                jellyMassControl.addEventListener('input', (e) => {
+                    const jellyMass = parseFloat(e.target.value);
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.jellyMass = jellyMass;
+                    
+                    // Update legacy property for immediate effect
+                    this.jellyMass = jellyMass;
+                    
+                    jellyMassDisplay.textContent = jellyMass.toFixed(1);
+                    console.log(`${this.currentRing} Jelly Mass changed to:`, jellyMass);
+                    this.updateDebugInfo();
+                });
+                
+                // Enable Jelly Physics Toggle
+                const enableJellyControl = document.getElementById('enableJelly');
+                enableJellyControl.addEventListener('change', (e) => {
+                    const enableJelly = e.target.checked;
+                    
+                    // Update current ring's parameters
+                    const params = this.getCurrentRingParams();
+                    params.enableJelly = enableJelly;
+                    
+                    // Update legacy property for immediate effect
+                    this.enableJelly = enableJelly;
+                    
+                    console.log(`${this.currentRing} Jelly Physics enabled:`, enableJelly);
+                    this.updateDebugInfo();
+                });
+                
+                // Initialize debug info
+                this.updateDebugInfo();
+            }
+            
+            updateDebugInfo() {
+                const debugInfo = document.getElementById('debugInfo');
+                if (debugInfo) {
+                    const cellSize = (1 / this.spatialFreq).toFixed(1);
+                    const invertedCellSize = this.invertedCellSize.toFixed(1);
+                    debugInfo.innerHTML = `
+                        <strong>EDITING: ${this.currentRing.toUpperCase()} RING</strong><br>
+                        Cell: ${cellSize} | Inverted Cell: ${invertedCellSize} | Oct: ${this.noiseOctaves} | Pers: ${this.noisePersistence.toFixed(2)} | Lac: ${this.lacunarity.toFixed(1)}<br>
+                        Time: ${this.timeScaleMultiplier.toFixed(2)}x | Step: ${this.timeStep.toFixed(3)} | Spring: ${this.springFreq}Hz @ ${this.springDamping.toFixed(2)} | Amp: ${this.amplitudeMultiplier.toFixed(1)}x<br>
+                        Jelly: Stiff=${this.jellyStiffness.toFixed(2)} | Damp=${this.jellyDamping.toFixed(2)} | Mass=${this.jellyMass.toFixed(1)}
+                    `;
+                }
+            }
+            
+            // Update jelly physics simulation
+            updateJellyPhysics(targetAmplitudes, deltaTime) {
+                const numPhysicsPoints = targetAmplitudes.length;
+                
+                // Don't resize arrays dynamically - each ring should maintain its own arrays
+                // Just ensure we don't go beyond the available array size
+                const maxPoints = Math.min(numPhysicsPoints, this.jellyPositions.length);
+                
+                for (let i = 0; i < maxPoints; i++) {
+                    // Update target position
+                    this.jellyTargets[i] = targetAmplitudes[i];
+                    
+                    // Calculate spring force (Hooke's law: F = -k * displacement)
+                    const displacement = this.jellyPositions[i] - this.jellyTargets[i];
+                    const springForce = -this.jellyStiffness * displacement;
+                    
+                    // Calculate damping force (F = -damping * velocity)
+                    const dampingForce = -this.jellyDamping * this.jellyVelocities[i];
+                    
+                    // Total force
+                    const totalForce = springForce + dampingForce;
+                    
+                    // Update velocity (F = ma, so a = F/m)
+                    const acceleration = totalForce / this.jellyMass;
+                    this.jellyVelocities[i] += acceleration * deltaTime;
+                    
+                    // Update position
+                    this.jellyPositions[i] += this.jellyVelocities[i] * deltaTime;
+                }
+                
+                // If we have fewer physics points than target amplitudes, fill the rest with direct values
+                const result = new Array(numPhysicsPoints);
+                for (let i = 0; i < numPhysicsPoints; i++) {
+                    if (i < maxPoints) {
+                        result[i] = this.jellyPositions[i];
+                    } else {
+                        result[i] = targetAmplitudes[i];
+                    }
+                }
+                
+                return result;
+            }
+            
+            // Switch to editing a different ring
+            switchToRing(ringName) {
+                this.currentRing = ringName;
+                const params = this.getCurrentRingParams();
+                
+                // Update UI controls to match selected ring's parameters
+                document.getElementById('cellSize').value = 1 / params.spatialFreq;
+                document.querySelector('#cellSize + .value-display').textContent = (1 / params.spatialFreq).toFixed(1);
+                
+                document.getElementById('noiseOctaves').value = params.noiseOctaves;
+                document.querySelector('#noiseOctaves + .value-display').textContent = params.noiseOctaves;
+                
+                document.getElementById('noisePersistence').value = params.noisePersistence;
+                document.querySelector('#noisePersistence + .value-display').textContent = params.noisePersistence.toFixed(2);
+                
+                document.getElementById('lacunarity').value = params.lacunarity;
+                document.querySelector('#lacunarity + .value-display').textContent = params.lacunarity.toFixed(1);
+                
+                document.getElementById('springFreq').value = params.springFreq;
+                document.querySelector('#springFreq + .value-display').textContent = params.springFreq;
+                
+                document.getElementById('springDamping').value = params.springDamping;
+                document.querySelector('#springDamping + .value-display').textContent = params.springDamping.toFixed(2);
+                
+                document.getElementById('timeScale').value = params.timeScaleMultiplier;
+                document.querySelector('#timeScale + .value-display').textContent = params.timeScaleMultiplier.toFixed(1);
+                
+                document.getElementById('timeStep').value = params.timeStep;
+                document.querySelector('#timeStep + .value-display').textContent = params.timeStep.toFixed(3);
+                
+                document.getElementById('amplitudeMultiplier').value = params.amplitudeMultiplier;
+                document.querySelector('#amplitudeMultiplier + .value-display').textContent = params.amplitudeMultiplier.toFixed(1);
+                
+                document.getElementById('ringOpacity').value = params.opacity;
+                document.querySelector('#ringOpacity + .value-display').textContent = params.opacity.toFixed(2);
+                
+                document.getElementById('jellyStiffness').value = params.jellyStiffness;
+                document.querySelector('#jellyStiffness + .value-display').textContent = params.jellyStiffness.toFixed(2);
+                
+                document.getElementById('jellyDamping').value = params.jellyDamping;
+                document.querySelector('#jellyDamping + .value-display').textContent = params.jellyDamping.toFixed(2);
+                
+                document.getElementById('jellyMass').value = params.jellyMass;
+                document.querySelector('#jellyMass + .value-display').textContent = params.jellyMass.toFixed(1);
+                
+                document.getElementById('enableJelly').checked = params.enableJelly;
+                
+                // Update legacy properties for immediate effect
+                this.updateLegacyProperties();
+            }
+            
+            // Get current ring's parameter object
+            getCurrentRingParams() {
+                if (this.currentRing === 'magenta') return this.magentaParams;
+                if (this.currentRing === 'cyan') return this.cyanParams;
+                if (this.currentRing === 'yellow') return this.yellowParams;
+                if (this.currentRing === 'magentaLines') return this.magentaLinesParams;
+                if (this.currentRing === 'blueDots') return this.blueDotsParams;
+                return this.magentaParams; // fallback
+            }
+            
+            // Update legacy properties from current ring
+            updateLegacyProperties() {
+                const params = this.getCurrentRingParams();
+                this.spatialFreq = params.spatialFreq;
+                this.noiseOctaves = params.noiseOctaves;
+                this.noisePersistence = params.noisePersistence;
+                this.lacunarity = params.lacunarity;
+                this.springFreq = params.springFreq;
+                this.springDamping = params.springDamping;
+                this.timeScaleMultiplier = params.timeScaleMultiplier;
+                this.timeStep = params.timeStep;
+                this.amplitudeMultiplier = params.amplitudeMultiplier;
+                this.jellyStiffness = params.jellyStiffness;
+                this.jellyDamping = params.jellyDamping;
+                this.jellyMass = params.jellyMass;
+                this.enableJelly = params.enableJelly;
+                this.opacity = params.opacity;
+                
+                // Update jelly physics arrays
+                if (this.currentRing === 'magenta') {
+                    this.jellyPositions = this.magentaJellyPositions;
+                    this.jellyVelocities = this.magentaJellyVelocities;
+                    this.jellyTargets = this.magentaJellyTargets;
+                } else if (this.currentRing === 'cyan') {
+                    this.jellyPositions = this.cyanJellyPositions;
+                    this.jellyVelocities = this.cyanJellyVelocities;
+                    this.jellyTargets = this.cyanJellyTargets;
+                } else if (this.currentRing === 'yellow') {
+                    this.jellyPositions = this.yellowJellyPositions;
+                    this.jellyVelocities = this.yellowJellyVelocities;
+                    this.jellyTargets = this.yellowJellyTargets;
+                } else if (this.currentRing === 'magentaLines') {
+                    this.jellyPositions = this.magentaLinesJellyPositions;
+                    this.jellyVelocities = this.magentaLinesJellyVelocities;
+                    this.jellyTargets = this.magentaLinesJellyTargets;
+                } else if (this.currentRing === 'blueDots') {
+                    this.jellyPositions = this.blueDotsJellyPositions;
+                    this.jellyVelocities = this.blueDotsJellyVelocities;
+                    this.jellyTargets = this.blueDotsJellyTargets;
+                }
+            }
+
+            updateLegacyPropertiesForRing(ringName) {
+                let params;
+                if (ringName === 'magenta') params = this.magentaParams;
+                else if (ringName === 'cyan') params = this.cyanParams;
+                else if (ringName === 'yellow') params = this.yellowParams;
+                else if (ringName === 'magentaLines') params = this.magentaLinesParams;
+                else if (ringName === 'blueDots') params = this.blueDotsParams;
+                else params = this.magentaParams; // fallback
+                
+                this.spatialFreq = params.spatialFreq;
+                this.noiseOctaves = params.noiseOctaves;
+                this.noisePersistence = params.noisePersistence;
+                this.lacunarity = params.lacunarity;
+                this.springFreq = params.springFreq;
+                this.springDamping = params.springDamping;
+                this.timeScaleMultiplier = params.timeScaleMultiplier;
+                this.timeStep = params.timeStep;
+                this.amplitudeMultiplier = params.amplitudeMultiplier;
+                this.jellyStiffness = params.jellyStiffness;
+                this.jellyDamping = params.jellyDamping;
+                this.jellyMass = params.jellyMass;
+                this.enableJelly = params.enableJelly;
+                this.opacity = params.opacity;
+                
+                // Update jelly physics arrays for the specific ring
+                if (ringName === 'magenta') {
+                    this.jellyPositions = this.magentaJellyPositions;
+                    this.jellyVelocities = this.magentaJellyVelocities;
+                    this.jellyTargets = this.magentaJellyTargets;
+                } else if (ringName === 'cyan') {
+                    this.jellyPositions = this.cyanJellyPositions;
+                    this.jellyVelocities = this.cyanJellyVelocities;
+                    this.jellyTargets = this.cyanJellyTargets;
+                } else if (ringName === 'yellow') {
+                    this.jellyPositions = this.yellowJellyPositions;
+                    this.jellyVelocities = this.yellowJellyVelocities;
+                    this.jellyTargets = this.yellowJellyTargets;
+                } else if (ringName === 'magentaLines') {
+                    this.jellyPositions = this.magentaLinesJellyPositions;
+                    this.jellyVelocities = this.magentaLinesJellyVelocities;
+                    this.jellyTargets = this.magentaLinesJellyTargets;
+                    
+                    // Debug: Verify magenta lines arrays are properly sized
+                    if (Math.random() < 0.1) { // Log occasionally
+                        console.log('Magenta Lines Arrays:', {
+                            positionsLength: this.jellyPositions.length,
+                            velocitiesLength: this.jellyVelocities.length,
+                            targetsLength: this.jellyTargets.length,
+                            expectedLength: this.numLinesPoints,
+                            params: {
+                                cellSize: 1 / params.spatialFreq,
+                                timeScale: params.timeScaleMultiplier,
+                                amplitude: params.amplitudeMultiplier,
+                                jellyStiffness: params.jellyStiffness
+                            }
+                        });
+                    }
+                } else if (ringName === 'blueDots') {
+                    this.jellyPositions = this.blueDotsJellyPositions;
+                    this.jellyVelocities = this.blueDotsJellyVelocities;
+                    this.jellyTargets = this.blueDotsJellyTargets;
+                }
+            }
+            
+            // Increment time for a specific ring and return the new time
+            incrementRingTime(ringName) {
+                let params;
+                if (ringName === 'magenta') params = this.magentaParams;
+                else if (ringName === 'cyan') params = this.cyanParams;
+                else if (ringName === 'yellow') params = this.yellowParams;
+                else if (ringName === 'magentaLines') params = this.magentaLinesParams;
+                else if (ringName === 'blueDots') params = this.blueDotsParams;
+                else params = this.magentaParams; // fallback
+                
+                const increment = params.timeStep * params.timeScaleMultiplier;
+                
+                if (ringName === 'magenta') {
+                    this.magentaCurrentTime += increment;
+                    return this.magentaCurrentTime;
+                } else if (ringName === 'cyan') {
+                    this.cyanCurrentTime += increment;
+                    return this.cyanCurrentTime;
+                } else if (ringName === 'yellow') {
+                    this.yellowCurrentTime += increment;
+                    return this.yellowCurrentTime;
+                } else if (ringName === 'magentaLines') {
+                    this.magentaLinesCurrentTime += increment;
+                    return this.magentaLinesCurrentTime;
+                } else if (ringName === 'blueDots') {
+                    this.blueDotsCurrentTime += increment;
+                    return this.blueDotsCurrentTime;
+                }
+                return 0; // fallback
+            }
+
+            cycleStates() {
+                const states = ['idle', 'thinking', 'responding'];
+                const currentIndex = states.indexOf(this.currentState);
+                const nextIndex = (currentIndex + 1) % states.length;
+                this.setState(states[nextIndex]);
+            }
+
+            setupNoiseControls() {
+                // ... [This method content remains unchanged]
+            }
+
+            startAutoCycle() {
+                // Auto demonstration cycle
+                setTimeout(() => {
+                    if (this.currentState === 'idle') {
+                        this.setState('thinking');
+                        setTimeout(() => this.setState('responding'), 3000);
+                        setTimeout(() => this.setState('idle'), 6000);
+                    }
+                }, 5000);
+            }
+
+            // Generate blue dots along the outer edge
+            generateBlueDots(outerDistortions) {
+                const dots = [];
+                
+                for (let i = 0; i < this.numBlueDotsPoints; i++) {
+                    const angle = (i / this.numBlueDotsPoints) * 2 * Math.PI;
+                    
+                    // Calculate outer point with distortions
+                    const outerDistortion = outerDistortions[i] || 0;
+                    const outerRadius = this.outerRadius + outerDistortion;
+                    
+                    // Calculate the actual position
+                    const x = this.centerX + outerRadius * Math.cos(angle);
+                    const y = this.centerY + outerRadius * Math.sin(angle);
+                    
+                    // Create dot
+                    dots.push({
+                        x: x,
+                        y: y,
+                        radius: 2 // Reduced from 4 to 2 (50% smaller)
+                    });
+                }
+                
+                return dots;
+            }
+            
+            // Update the SVG dots in the blue dots ring
+            updateBlueDotsRing(dots) {
+                // Clear existing dots
+                this.blueDotsRing.innerHTML = '';
+                
+                // Create new dots
+                dots.forEach((dot, index) => {
+                    const dotElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    dotElement.setAttribute('cx', dot.x);
+                    dotElement.setAttribute('cy', dot.y);
+                    dotElement.setAttribute('r', dot.radius);
+                    dotElement.setAttribute('fill', '#4A90E2');
+                    this.blueDotsRing.appendChild(dotElement);
+                });
+            }
+        }
+
+        // Initialize the morphing ring
+        const morphingRing = new MorphingRing();
+    </script>
+</body>
+</html> 
