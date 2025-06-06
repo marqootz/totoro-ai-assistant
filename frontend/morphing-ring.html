@@ -454,6 +454,33 @@
         </div>
     </div>
 
+    <!-- BEGIN: Voice-Reactive Controls and TTS Panel -->
+    <div class="control-panel" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); min-width: 320px; z-index: 20; background: rgba(0,0,0,0.8); border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); padding: 20px; color: #fff;">
+        <h3>🎙️ Voice-Reactive AI Assistant</h3>
+        <div class="control-group" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button id="startListeningBtn">Start Listening</button>
+            <button id="stopListeningBtn" disabled>Stop Listening</button>
+        </div>
+        <div class="control-group" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button id="testThinkingBtn">Test Thinking</button>
+            <button id="testSpeakingBtn">Test Speaking</button>
+        </div>
+        <div class="status-display" id="statusDisplay" style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 12px;">
+            <div class="status-line"><span>State:</span> <span id="currentState">Idle</span></div>
+            <div class="status-line"><span>Last Speech:</span> <span id="lastSpeech">None</span></div>
+            <div class="status-line"><span>TTS Status:</span> <span id="ttsStatus">Ready</span></div>
+        </div>
+    </div>
+    <div class="tts-controls" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); min-width: 320px; z-index: 20; background: rgba(0,0,0,0.8); border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); padding: 20px; color: #fff;">
+        <h3>🗣️ Text-to-Speech</h3>
+        <textarea class="tts-input" id="ttsInput" placeholder="Enter text to speak... The rings will animate as the AI responds." style="width: 100%; min-height: 60px; margin-bottom: 10px; border-radius: 8px; padding: 10px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);"></textarea>
+        <div class="control-group" style="display: flex; gap: 10px;">
+            <button id="speakBtn">Speak Text</button>
+            <button id="stopSpeakingBtn" disabled>Stop Speaking</button>
+        </div>
+    </div>
+    <!-- END: Voice-Reactive Controls and TTS Panel -->
+
     <script>
         class MorphingRing {
             constructor() {
@@ -2218,10 +2245,187 @@
                     this.blueDotsRing.appendChild(dotElement);
                 });
             }
+
+            // Add this inside the MorphingRing class
+            perlinNoise(x) {
+                // Simple 1D Perlin noise implementation
+                const xi = Math.floor(x);
+                const xf = x - xi;
+
+                // Get gradients at the two grid points
+                const grad0 = this.getGradient(xi);
+                const grad1 = this.getGradient(xi + 1);
+
+                // Calculate dot products
+                const dot0 = grad0 * xf;
+                const dot1 = grad1 * (xf - 1);
+
+                // Fade function for smooth interpolation
+                const fade = xf * xf * xf * (xf * (xf * 6 - 15) + 10);
+
+                // Linear interpolation
+                return dot0 + fade * (dot1 - dot0);
+            }
         }
 
         // Initialize the morphing ring
         const morphingRing = new MorphingRing();
+    </script>
+
+    <!-- BEGIN: Voice-Reactive Backend Integration -->
+    <script>
+    // --- BEGIN: Voice-Reactive Backend Integration ---
+    (function() {
+        // State mapping for morphing ring
+        const stateMap = {
+            idle: 'Idle State',
+            listening: 'Listening...',
+            thinking: 'AI is thinking...',
+            speaking: 'AI is speaking...'
+        };
+        let currentState = 'idle';
+        let isListening = false;
+        let isSpeaking = false;
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        function updateState(newState, fromBackend = false) {
+            currentState = newState;
+            document.getElementById('stateIndicator').textContent = stateMap[newState] || newState;
+            document.getElementById('currentState').textContent = newState.charAt(0).toUpperCase() + newState.slice(1);
+            // Update ring-container class for visual state
+            const ringContainer = document.getElementById('ringContainer');
+            ringContainer.classList.remove('idle', 'listening', 'thinking', 'speaking');
+            ringContainer.classList.add(newState);
+        }
+
+        function updateButtons() {
+            document.getElementById('startListeningBtn').disabled = isListening;
+            document.getElementById('stopListeningBtn').disabled = !isListening;
+            document.getElementById('speakBtn').disabled = isSpeaking;
+            document.getElementById('stopSpeakingBtn').disabled = !isSpeaking;
+        }
+
+        function connectToBackend() {
+            console.log('[WS] Attempting to connect to ws://localhost:8765 ...');
+            ws = new WebSocket('ws://localhost:8765');
+            
+            ws.onopen = function() {
+                console.log('[WS] Connected to backend!');
+                reconnectAttempts = 0;
+                sendCommand('get_status');
+            };
+            
+            ws.onmessage = function(event) {
+                console.log('[WS] Message received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    handleBackendMessage(data);
+                } catch (e) { 
+                    console.error('[WS] Backend message parse error', e); 
+                }
+            };
+            
+            ws.onclose = function(event) {
+                console.warn('[WS] Connection closed', event);
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    setTimeout(connectToBackend, 2000 * reconnectAttempts);
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('[WS] WebSocket error:', error);
+            };
+        }
+
+        function sendCommand(command, data = {}) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const msg = JSON.stringify({command, ...data});
+                console.log('[WS] Sending command:', msg);
+                ws.send(msg);
+            } else {
+                console.warn('[WS] Cannot send command, socket not open:', command, data);
+            }
+        }
+
+        function handleBackendMessage(data) {
+            switch (data.type) {
+                case 'state_change':
+                    updateState(data.new_state, true);
+                    break;
+                case 'state_update':
+                    updateState(data.state, true);
+                    break;
+                case 'listening_started':
+                    isListening = true;
+                    updateButtons();
+                    break;
+                case 'listening_stopped':
+                    isListening = false;
+                    updateButtons();
+                    break;
+                case 'speech_recognized':
+                    document.getElementById('lastSpeech').textContent = data.transcript;
+                    break;
+                case 'speech_started':
+                    isSpeaking = true;
+                    document.getElementById('ttsStatus').textContent = 'AI Speaking...';
+                    updateButtons();
+                    break;
+                case 'speech_ended':
+                    isSpeaking = false;
+                    document.getElementById('ttsStatus').textContent = 'Ready';
+                    updateButtons();
+                    break;
+                case 'speech_stopped':
+                    isSpeaking = false;
+                    document.getElementById('ttsStatus').textContent = 'Stopped';
+                    updateButtons();
+                    break;
+                case 'status_update':
+                    isListening = data.is_listening;
+                    isSpeaking = data.is_speaking;
+                    updateButtons();
+                    break;
+                case 'error':
+                    document.getElementById('ttsStatus').textContent = 'Error: ' + data.message;
+                    break;
+            }
+        }
+
+        // UI event listeners
+        document.getElementById('startListeningBtn').addEventListener('click', function() { console.log('[UI] Start Listening clicked'); sendCommand('start_listening'); });
+        document.getElementById('stopListeningBtn').addEventListener('click', function() { console.log('[UI] Stop Listening clicked'); sendCommand('stop_listening'); });
+        document.getElementById('testThinkingBtn').addEventListener('click', function() { console.log('[UI] Test Thinking clicked'); sendCommand('test_thinking'); });
+        document.getElementById('testSpeakingBtn').addEventListener('click', function() { console.log('[UI] Test Speaking clicked'); updateState('speaking'); setTimeout(() => updateState(isListening ? 'listening' : 'idle'), 2000); });
+        document.getElementById('speakBtn').addEventListener('click', function() {
+            const text = document.getElementById('ttsInput').value;
+            console.log('[UI] Speak Text clicked:', text);
+            if (text.trim()) sendCommand('speak_text', {text});
+        });
+        document.getElementById('stopSpeakingBtn').addEventListener('click', function() { console.log('[UI] Stop Speaking clicked'); sendCommand('stop_speaking'); });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (isListening) { console.log('[UI] Space: Stop Listening'); sendCommand('stop_listening'); }
+                    else { console.log('[UI] Space: Start Listening'); sendCommand('start_listening'); }
+                    break;
+                case '1': console.log('[UI] 1: Idle'); updateState('idle'); break;
+                case '2': console.log('[UI] 2: Start Listening'); sendCommand('start_listening'); break;
+                case '3': console.log('[UI] 3: Test Thinking'); sendCommand('test_thinking'); break;
+                case '4': console.log('[UI] 4: Test Speaking'); updateState('speaking'); setTimeout(() => updateState(isListening ? 'listening' : 'idle'), 2000); break;
+            }
+        });
+
+        connectToBackend();
+        updateButtons();
+    })();
+    // --- END: Voice-Reactive Backend Integration ---
     </script>
 </body>
 </html> 
