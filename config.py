@@ -6,8 +6,8 @@ WAKE_WORD = "totoro"
 RECOGNITION_TIMEOUT = 30
 COMMAND_TIMEOUT = 10
 
-# Voice Output Settings - Using Coqui TTS with George's cloned voice
-voice_pref = os.getenv('VOICE_PREFERENCE', 'coqui')
+# Voice Output Settings - Using system voice by default
+voice_pref = os.getenv('VOICE_PREFERENCE', 'system')
 VOICE_PREFERENCE = voice_pref
 TTS_RATE = 180
 TTS_VOLUME = 0.8

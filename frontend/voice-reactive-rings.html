@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice-Reactive Morphing Rings - AI Assistant</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+
+        .interface-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .ring-container {
+            width: 400px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .morphing-ring {
+            width: 300px;
+            height: 300px;
+            overflow: visible;
+        }
+
+        /* Voice Activity Indicator */
+        .voice-indicator {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-weight: 400;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-status {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        .audio-level-indicator {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .audio-level-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #51ABFA, #F05B8E);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 1);
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group button {
+            background: linear-gradient(135deg, #F05B8E, #51ABFA);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .control-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 91, 142, 0.4);
+        }
+
+        .control-group button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-display {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .status-display .status-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .status-display .status-line:last-child {
+            margin-bottom: 0;
+        }
+
+        /* TTS Controls */
+        .tts-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .tts-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .tts-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* State indicators */
+        .ring-container.listening .morphing-ring {
+            filter: drop-shadow(0 0 20px rgba(81, 171, 250, 0.6));
+        }
+
+        .ring-container.thinking .morphing-ring {
+            filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+        }
+
+        .ring-container.speaking .morphing-ring {
+            filter: drop-shadow(0 0 30px rgba(240, 91, 142, 0.9));
+        }
+
+        /* Audio visualizer */
+        .audio-visualizer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .visualizer-bar {
+            width: 3px;
+            background: linear-gradient(180deg, #F05B8E, #51ABFA);
+            margin: 0 1px;
+            border-radius: 2px;
+            display: inline-block;
+            transition: height 0.1s ease;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .control-panel, .tts-controls {
+                position: relative;
+                width: 90%;
+                margin: 10px auto;
+            }
+            
+            .interface-container {
+                flex-direction: column;
+                padding: 20px;
+            }
+            
+            .ring-container {
+                width: 80vw;
+                height: 80vw;
+                max-width: 300px;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="interface-container">
+        <!-- Main Ring Container -->
+        <div class="ring-container" id="ringContainer">
+            <svg class="morphing-ring" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Gradients for different states -->
+                    <radialGradient id="listeningGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#51ABFA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#51ABFA;stop-opacity:0.8" />
+                    </radialGradient>
+
+                    <radialGradient id="thinkingGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFA500;stop-opacity:0.8" />
+                    </radialGradient>
+
+                    <radialGradient id="speakingGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#F05B8E;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#F05B8E;stop-opacity:0.8" />
+                    </radialGradient>
+
+                    <radialGradient id="idleGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#888888;stop-opacity:0.6" />
+                        <stop offset="100%" style="stop-color:#444444;stop-opacity:0.4" />
+                    </radialGradient>
+                </defs>
+
+                <!-- Main morphing ring -->
+                <path id="morphingPath" fill="url(#idleGradient)" stroke="none"/>
+
+                <!-- Secondary rings for complex animations -->
+                <path id="secondaryRing" fill="none" stroke="url(#listeningGradient)" stroke-width="2" opacity="0"/>
+                <path id="tertiaryRing" fill="none" stroke="url(#speakingGradient)" stroke-width="1" opacity="0"/>
+            </svg>
+
+            <!-- Audio visualizer -->
+            <div class="audio-visualizer" id="audioVisualizer"></div>
+
+            <!-- Voice activity indicator -->
+            <div class="voice-indicator">
+                <div class="voice-status" id="voiceStatus">Ready for voice input</div>
+                <div class="audio-level-indicator">
+                    <div class="audio-level-bar" id="audioLevelBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h3>🎙️ Voice-Reactive AI Assistant</h3>
+            
+            <div class="control-group">
+                <button id="startListeningBtn">Start Listening</button>
+                <button id="stopListeningBtn" disabled>Stop Listening</button>
+            </div>
+
+            <div class="control-group">
+                <button id="testThinkingBtn">Test Thinking</button>
+                <button id="testSpeakingBtn">Test Speaking</button>
+            </div>
+
+            <div class="status-display" id="statusDisplay">
+                <div class="status-line">
+                    <span>State:</span>
+                    <span id="currentState">Idle</span>
+                </div>
+                <div class="status-line">
+                    <span>Audio Level:</span>
+                    <span id="audioLevel">0%</span>
+                </div>
+                <div class="status-line">
+                    <span>Last Speech:</span>
+                    <span id="lastSpeech">None</span>
+                </div>
+                <div class="status-line">
+                    <span>TTS Status:</span>
+                    <span id="ttsStatus">Ready</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TTS Controls -->
+        <div class="tts-controls">
+            <h3>🗣️ Text-to-Speech</h3>
+            <textarea 
+                class="tts-input" 
+                id="ttsInput" 
+                placeholder="Enter text to speak... The rings will animate as the AI responds."
+            >Hello! I'm your voice-reactive AI assistant. Watch the rings respond to my voice patterns and audio frequencies.</textarea>
+            <div class="control-group">
+                <button id="speakBtn">Speak Text</button>
+                <button id="stopSpeakingBtn" disabled>Stop Speaking</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class VoiceReactiveRings {
+            constructor() {
+                // Animation parameters
+                this.centerX = 150;
+                this.centerY = 150;
+                this.baseRadius = 100;
+                this.radiusVariation = 30;
+                this.numPoints = 8;
+                
+                // State management
+                this.currentState = 'idle'; // idle, listening, thinking, speaking
+                this.isListening = false;
+                this.isSpeaking = false;
+                this.isThinking = false;
+                
+                // WebSocket connection to Python backend
+                this.websocket = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                
+                // Audio context for real-time visualization
+                this.audioContext = null;
+                this.microphone = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.speechRecognition = null;
+                
+                // TTS
+                this.speechSynthesis = window.speechSynthesis;
+                this.currentUtterance = null;
+                
+                // Animation properties
+                this.animationId = null;
+                this.time = 0;
+                this.voiceAmplitude = 0;
+                this.targetAmplitude = 0;
+                this.audioLevels = new Array(32).fill(0);
+                
+                // Real-time audio level from backend
+                this.backendAudioLevel = 0;
+                this.backendTargetLevel = 0;
+                
+                // DOM elements
+                this.container = document.getElementById('ringContainer');
+                this.morphingPath = document.getElementById('morphingPath');
+                this.secondaryRing = document.getElementById('secondaryRing');
+                this.tertiaryRing = document.getElementById('tertiaryRing');
+                this.audioVisualizer = document.getElementById('audioVisualizer');
+                this.voiceStatus = document.getElementById('voiceStatus');
+                this.audioLevelBar = document.getElementById('audioLevelBar');
+                this.statusDisplay = document.getElementById('statusDisplay');
+                
+                // Initialize ring paths
+                const initialDistortions = new Array(this.numPoints).fill(0);
+                this.morphingPath.setAttribute('d', this.generateMorphedPath(initialDistortions));
+                this.secondaryRing.setAttribute('d', this.generateMorphedPath(initialDistortions, this.baseRadius + 20));
+                this.tertiaryRing.setAttribute('d', this.generateMorphedPath(initialDistortions, this.baseRadius + 35));
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.createAudioVisualizer();
+                this.connectToBackend();
+                this.startAnimation();
+                this.updateStatus();
+                console.log('🎙️ Voice-Reactive Rings initialized');
+            }
+
+            setupEventListeners() {
+                // Control buttons - now connect to backend
+                document.getElementById('startListeningBtn').addEventListener('click', () => this.sendCommand('start_listening'));
+                document.getElementById('stopListeningBtn').addEventListener('click', () => this.sendCommand('stop_listening'));
+                document.getElementById('testThinkingBtn').addEventListener('click', () => this.sendCommand('test_thinking'));
+                document.getElementById('testSpeakingBtn').addEventListener('click', () => this.testSpeaking());
+                document.getElementById('speakBtn').addEventListener('click', () => this.speakText());
+                document.getElementById('stopSpeakingBtn').addEventListener('click', () => this.sendCommand('stop_speaking'));
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case ' ':
+                            e.preventDefault();
+                            if (this.isListening) {
+                                this.sendCommand('stop_listening');
+                            } else {
+                                this.sendCommand('start_listening');
+                            }
+                            break;
+                        case '1':
+                            this.setState('idle');
+                            break;
+                        case '2':
+                            this.sendCommand('start_listening');
+                            break;
+                        case '3':
+                            this.sendCommand('test_thinking');
+                            break;
+                        case '4':
+                            this.testSpeaking();
+                            break;
+                    }
+                });
+            }
+
+            connectToBackend() {
+                const wsUrl = 'ws://localhost:8765';
+                
+                try {
+                    // Close existing connection if any
+                    if (this.websocket) {
+                        console.log('Closing existing WebSocket connection...');
+                        this.websocket.close();
+                    }
+                    
+                    console.log('Attempting to connect to WebSocket server...');
+                    this.websocket = new WebSocket(wsUrl);
+                    
+                    // Set a connection timeout
+                    const connectionTimeout = setTimeout(() => {
+                        if (this.websocket.readyState !== WebSocket.OPEN) {
+                            console.error('WebSocket connection timeout');
+                            this.websocket.close();
+                            this.updateConnectionStatus('Connection timeout - retrying...');
+                            this.attemptReconnect();
+                        }
+                    }, 5000);
+                    
+                    this.websocket.onopen = (event) => {
+                        clearTimeout(connectionTimeout);
+                        console.log('🔗 Connected to voice backend');
+                        this.reconnectAttempts = 0;
+                        this.updateConnectionStatus('Connected to AI backend');
+                        
+                        // Request current status
+                        this.sendCommand('get_status');
+                        
+                        // Enable buttons that require backend connection
+                        document.getElementById('startListeningBtn').disabled = false;
+                        document.getElementById('testThinkingBtn').disabled = false;
+                        document.getElementById('speakBtn').disabled = false;
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('Received message:', data);
+                            this.handleBackendMessage(data);
+                        } catch (error) {
+                            console.error('Error parsing backend message:', error);
+                        }
+                    };
+                    
+                    this.websocket.onclose = (event) => {
+                        clearTimeout(connectionTimeout);
+                        console.log('🔌 WebSocket closed:', event.code, event.reason);
+                        this.updateConnectionStatus(`Disconnected (${event.code}) - ${event.reason || 'No reason provided'}`);
+                        
+                        // Disable buttons that require backend connection
+                        document.getElementById('startListeningBtn').disabled = true;
+                        document.getElementById('testThinkingBtn').disabled = true;
+                        document.getElementById('speakBtn').disabled = true;
+                        
+                        this.attemptReconnect();
+                    };
+                    
+                    this.websocket.onerror = (error) => {
+                        console.error('❌ WebSocket error:', error);
+                        this.updateConnectionStatus('Connection error - retrying...');
+                        
+                        // Disable buttons that require backend connection
+                        document.getElementById('startListeningBtn').disabled = true;
+                        document.getElementById('testThinkingBtn').disabled = true;
+                        document.getElementById('speakBtn').disabled = true;
+                    };
+                    
+                } catch (error) {
+                    console.error('❌ Failed to connect to backend:', error);
+                    this.updateConnectionStatus('Backend unavailable - using local mode');
+                    
+                    // Disable buttons that require backend connection
+                    document.getElementById('startListeningBtn').disabled = true;
+                    document.getElementById('testThinkingBtn').disabled = true;
+                    document.getElementById('speakBtn').disabled = true;
+                }
+            }
+
+            attemptReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+                    
+                    setTimeout(() => {
+                        this.connectToBackend();
+                    }, 2000 * this.reconnectAttempts); // Exponential backoff
+                } else {
+                    console.log('❌ Max reconnection attempts reached. Using local mode.');
+                    this.updateConnectionStatus('Backend unavailable - using local mode');
+                }
+            }
+
+            sendCommand(command, data = {}) {
+                if (!this.websocket) {
+                    console.warn('❌ WebSocket not initialized');
+                    this.updateConnectionStatus('WebSocket not initialized - reconnecting...');
+                    this.connectToBackend();
+                    return;
+                }
+                
+                if (this.websocket.readyState === WebSocket.CONNECTING) {
+                    console.warn('⏳ WebSocket still connecting, queuing command:', command);
+                    this.updateConnectionStatus('Still connecting...');
+                    setTimeout(() => this.sendCommand(command, data), 1000);
+                    return;
+                }
+                
+                if (this.websocket.readyState === WebSocket.OPEN) {
+                    const message = {
+                        command: command,
+                        ...data
+                    };
+                    console.log('📤 Sending command:', command);
+                    this.websocket.send(JSON.stringify(message));
+                } else {
+                    console.warn('❌ WebSocket not open (state:', this.websocket.readyState, '), cannot send command:', command);
+                    this.updateConnectionStatus('Connection lost - reconnecting...');
+                    this.connectToBackend();
+                    this.handleLocalFallback(command, data);
+                }
+            }
+
+            handleLocalFallback(command, data) {
+                // Handle commands locally when backend is not available
+                switch (command) {
+                    case 'start_listening':
+                        this.startListeningLocal();
+                        break;
+                    case 'stop_listening':
+                        this.stopListeningLocal();
+                        break;
+                    case 'test_thinking':
+                        this.testThinking();
+                        break;
+                    case 'stop_speaking':
+                        this.stopSpeaking();
+                        break;
+                }
+            }
+
+            handleBackendMessage(data) {
+                console.log('📩 Backend message:', data.type);
+                
+                switch (data.type) {
+                    case 'state_change':
+                        this.setState(data.new_state, true); // true = from backend
+                        break;
+                        
+                    case 'state_update':
+                        this.setState(data.state, true);
+                        break;
+                        
+                    case 'listening_started':
+                        this.isListening = true;
+                        this.updateButtons();
+                        break;
+                        
+                    case 'listening_stopped':
+                        this.isListening = false;
+                        this.updateButtons();
+                        break;
+                        
+                    case 'speech_recognized':
+                        document.getElementById('lastSpeech').textContent = data.transcript;
+                        this.voiceStatus.textContent = `Recognized: "${data.transcript}"`;
+                        break;
+                        
+                    case 'speech_started':
+                        this.isSpeaking = true;
+                        document.getElementById('ttsStatus').textContent = 'AI Speaking...';
+                        this.updateButtons();
+                        break;
+                        
+                    case 'speech_ended':
+                        this.isSpeaking = false;
+                        document.getElementById('ttsStatus').textContent = 'Ready';
+                        this.updateButtons();
+                        break;
+                        
+                    case 'speech_stopped':
+                        this.isSpeaking = false;
+                        document.getElementById('ttsStatus').textContent = 'Stopped';
+                        this.updateButtons();
+                        break;
+                        
+                    case 'status_update':
+                        this.updateFromBackendStatus(data);
+                        break;
+                        
+                    case 'error':
+                        console.error('❌ Backend error:', data.message);
+                        this.voiceStatus.textContent = `Error: ${data.message}`;
+                        break;
+                        
+                    case 'audio_level':
+                        // Real-time audio level from backend
+                        this.backendTargetLevel = data.level;
+                        break;
+                }
+            }
+
+            updateFromBackendStatus(status) {
+                this.isListening = status.is_listening;
+                this.isSpeaking = status.is_speaking;
+                this.isThinking = status.is_thinking;
+                
+                this.updateButtons();
+                
+                // Update availability indicators
+                const availability = [];
+                if (status.voice_available) availability.push('🎤Voice');
+                if (status.tts_available) availability.push('🗣️TTS');
+                if (status.ai_available) availability.push('🤖AI');
+                
+                this.updateConnectionStatus(`Connected: ${availability.join(' ')}`);
+            }
+
+            updateConnectionStatus(status) {
+                // Update the voice status display with connection information
+                const statusElement = document.getElementById('voiceStatus');
+                if (statusElement) {
+                    statusElement.textContent = status;
+                }
+                console.log('🔗 Connection status:', status);
+            }
+
+            createAudioVisualizer() {
+                // Create visualizer bars
+                for (let i = 0; i < 32; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'visualizer-bar';
+                    bar.style.height = '2px';
+                    this.audioVisualizer.appendChild(bar);
+                }
+            }
+
+            async startListeningLocal() {
+                // Local fallback when backend is not available
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { 
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 44100
+                        } 
+                    });
+                    
+                    this.microphone = this.audioContext.createMediaStreamSource(stream);
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 128;
+                    this.analyser.smoothingTimeConstant = 0.8;
+                    
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    this.microphone.connect(this.analyser);
+                    
+                    this.setupSpeechRecognition();
+                    
+                    this.isListening = true;
+                    this.setState('listening');
+                    this.updateButtons();
+                    
+                    console.log('🎤 Started local listening mode');
+                    
+                } catch (error) {
+                    console.error('❌ Error starting local voice input:', error);
+                    this.voiceStatus.textContent = 'Microphone access denied';
+                }
+            }
+
+            setupSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    this.speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                    this.speechRecognition.continuous = true;
+                    this.speechRecognition.interimResults = true;
+                    this.speechRecognition.lang = 'en-US';
+                    
+                    this.speechRecognition.onstart = () => {
+                        console.log('🗣️ Local speech recognition started');
+                    };
+                    
+                    this.speechRecognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        let interimTranscript = '';
+                        
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript;
+                            } else {
+                                interimTranscript += transcript;
+                            }
+                        }
+                        
+                        if (finalTranscript) {
+                            this.processSpeechInputLocal(finalTranscript);
+                        }
+                        
+                        document.getElementById('lastSpeech').textContent = 
+                            finalTranscript || interimTranscript || 'Listening...';
+                    };
+                    
+                    this.speechRecognition.onerror = (event) => {
+                        console.warn('Speech recognition error:', event.error);
+                    };
+                    
+                    this.speechRecognition.start();
+                } else {
+                    console.warn('Speech recognition not supported');
+                }
+            }
+
+            processSpeechInputLocal(transcript) {
+                console.log('📝 Local speech input:', transcript);
+                document.getElementById('lastSpeech').textContent = transcript;
+                
+                // Trigger thinking state
+                this.setState('thinking');
+                
+                // Simulate AI processing
+                setTimeout(() => {
+                    const response = this.generateAIResponse(transcript);
+                    this.speakResponse(response);
+                }, 1000 + Math.random() * 2000);
+            }
+
+            stopListeningLocal() {
+                if (this.speechRecognition) {
+                    this.speechRecognition.stop();
+                }
+                
+                if (this.microphone) {
+                    this.microphone.disconnect();
+                }
+                
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                
+                this.isListening = false;
+                this.setState('idle');
+                this.updateButtons();
+                
+                console.log('🔇 Stopped local listening');
+            }
+
+            speakText() {
+                const text = document.getElementById('ttsInput').value;
+                if (text.trim()) {
+                    // Try to send to backend first
+                    this.sendCommand('speak_text', { text: text });
+                    
+                    // If backend not available, use local TTS
+                    if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+                        this.speakResponse(text);
+                    }
+                }
+            }
+
+            speakResponse(text) {
+                this.setState('speaking');
+                
+                if (this.currentUtterance) {
+                    this.speechSynthesis.cancel();
+                }
+                
+                this.currentUtterance = new SpeechSynthesisUtterance(text);
+                this.currentUtterance.rate = 0.9;
+                this.currentUtterance.pitch = 1.0;
+                this.currentUtterance.volume = 0.8;
+                
+                this.currentUtterance.onstart = () => {
+                    this.isSpeaking = true;
+                    document.getElementById('ttsStatus').textContent = 'Speaking...';
+                    this.updateButtons();
+                };
+                
+                this.currentUtterance.onend = () => {
+                    this.isSpeaking = false;
+                    document.getElementById('ttsStatus').textContent = 'Ready';
+                    this.setState(this.isListening ? 'listening' : 'idle');
+                    this.updateButtons();
+                };
+                
+                this.currentUtterance.onerror = (event) => {
+                    console.error('TTS error:', event.error);
+                    this.isSpeaking = false;
+                    document.getElementById('ttsStatus').textContent = 'Error';
+                    this.setState(this.isListening ? 'listening' : 'idle');
+                    this.updateButtons();
+                };
+                
+                this.speechSynthesis.speak(this.currentUtterance);
+            }
+
+            stopSpeaking() {
+                if (this.speechSynthesis) {
+                    this.speechSynthesis.cancel();
+                }
+                this.isSpeaking = false;
+                document.getElementById('ttsStatus').textContent = 'Stopped';
+                this.setState(this.isListening ? 'listening' : 'idle');
+                this.updateButtons();
+            }
+
+            testThinking() {
+                this.setState('thinking');
+                setTimeout(() => {
+                    this.setState(this.isListening ? 'listening' : 'idle');
+                }, 3000);
+            }
+
+            testSpeaking() {
+                this.setState('speaking');
+                setTimeout(() => {
+                    this.setState(this.isListening ? 'listening' : 'idle');
+                }, 2000);
+            }
+
+            generateAIResponse(input) {
+                // Simple response generation for demo
+                const responses = [
+                    "I heard you say: " + input,
+                    "That's interesting. Tell me more about " + input.split(' ').pop(),
+                    "I understand. Let me think about " + input,
+                    "Great question! " + input + " is fascinating.",
+                    "I'm processing your request about " + input
+                ];
+                
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            setState(newState, fromBackend = false) {
+                if (this.currentState === newState) return;
+                
+                this.currentState = newState;
+                
+                // Remove all state classes
+                this.container.classList.remove('listening', 'thinking', 'speaking');
+                
+                // Add new state class
+                this.container.classList.add(newState);
+                
+                // Update visual feedback
+                this.updateStateVisuals();
+                this.updateStatus();
+                
+                if (!fromBackend) {
+                    console.log('🔄 Local state changed to:', newState);
+                } else {
+                    console.log('🔄 Backend state changed to:', newState);
+                }
+            }
+
+            updateStateVisuals() {
+                const gradientMap = {
+                    idle: 'url(#idleGradient)',
+                    listening: 'url(#listeningGradient)',
+                    thinking: 'url(#thinkingGradient)',
+                    speaking: 'url(#speakingGradient)'
+                };
+                
+                const statusMap = {
+                    idle: 'Ready for voice input',
+                    listening: 'Listening for your voice...',
+                    thinking: 'AI is thinking...',
+                    speaking: 'AI is speaking...'
+                };
+                
+                this.morphingPath.setAttribute('fill', gradientMap[this.currentState]);
+                this.voiceStatus.textContent = statusMap[this.currentState];
+                
+                // Animate secondary rings based on state
+                if (this.currentState === 'listening') {
+                    gsap.to(this.secondaryRing, { opacity: 0.6, duration: 0.5 });
+                } else if (this.currentState === 'thinking') {
+                    gsap.to(this.secondaryRing, { opacity: 0.8, duration: 0.5 });
+                    gsap.to(this.tertiaryRing, { opacity: 0.4, duration: 0.5 });
+                } else if (this.currentState === 'speaking') {
+                    gsap.to(this.secondaryRing, { opacity: 0.9, duration: 0.5 });
+                    gsap.to(this.tertiaryRing, { opacity: 0.7, duration: 0.5 });
+                } else {
+                    gsap.to([this.secondaryRing, this.tertiaryRing], { opacity: 0, duration: 0.5 });
+                }
+            }
+
+            updateButtons() {
+                const startBtn = document.getElementById('startListeningBtn');
+                const stopBtn = document.getElementById('stopListeningBtn');
+                const speakBtn = document.getElementById('speakBtn');
+                const stopSpeakBtn = document.getElementById('stopSpeakingBtn');
+                
+                startBtn.disabled = this.isListening;
+                stopBtn.disabled = !this.isListening;
+                speakBtn.disabled = this.isSpeaking;
+                stopSpeakBtn.disabled = !this.isSpeaking;
+            }
+
+            startAnimation() {
+                const animate = () => {
+                    this.time += 0.02;
+                    
+                    // Smooth backend audio level integration
+                    this.backendAudioLevel += (this.backendTargetLevel - this.backendAudioLevel) * 0.1;
+                    
+                    // Process local audio data if listening locally
+                    if (this.isListening && this.analyser && this.dataArray) {
+                        this.analyser.getByteFrequencyData(this.dataArray);
+                        this.processAudioData();
+                    }
+                    
+                    // Use backend audio level if available, otherwise use local
+                    const effectiveAudioLevel = this.backendAudioLevel || this.voiceAmplitude;
+                    
+                    // Generate ring morphing based on state and audio
+                    this.updateRingMorphing(effectiveAudioLevel);
+                    this.updateAudioVisualizer();
+                    
+                    this.animationId = requestAnimationFrame(animate);
+                };
+                
+                animate();
+            }
+
+            processAudioData() {
+                // Calculate overall audio level (local fallback)
+                let sum = 0;
+                for (let i = 0; i < this.dataArray.length; i++) {
+                    sum += this.dataArray[i];
+                }
+                const avgLevel = sum / this.dataArray.length;
+                
+                // Update audio level display
+                const levelPercent = Math.min(100, (avgLevel / 255) * 100);
+                this.audioLevelBar.style.width = levelPercent + '%';
+                document.getElementById('audioLevel').textContent = Math.round(levelPercent) + '%';
+                
+                // Store for ring animation
+                this.targetAmplitude = avgLevel / 255;
+                
+                // Smooth transition
+                this.voiceAmplitude += (this.targetAmplitude - this.voiceAmplitude) * 0.1;
+                
+                // Update frequency data for visualizer
+                for (let i = 0; i < Math.min(32, this.dataArray.length); i++) {
+                    this.audioLevels[i] = this.dataArray[i] / 255;
+                }
+            }
+
+            updateRingMorphing(audioLevel = 0) {
+                // Generate distortions based on state and audio
+                const distortions = [];
+                for (let i = 0; i < this.numPoints; i++) {
+                    const angle = (i / this.numPoints) * Math.PI * 2;
+                    let distortion = 0;
+                    
+                    switch (this.currentState) {
+                        case 'idle':
+                            distortion = Math.sin(this.time + angle * 2) * 5;
+                            break;
+                        case 'listening':
+                            distortion = Math.sin(this.time * 2 + angle * 3) * 10 + 
+                                       audioLevel * Math.sin(this.time * 4 + angle) * 20;
+                            break;
+                        case 'thinking':
+                            distortion = Math.sin(this.time * 3 + angle * 2) * 15 + 
+                                       Math.cos(this.time * 5 + angle * 4) * 10;
+                            break;
+                        case 'speaking':
+                            distortion = Math.sin(this.time * 4 + angle * 2) * 25 + 
+                                       audioLevel * Math.cos(this.time * 6 + angle) * 30;
+                            break;
+                    }
+                    
+                    distortions.push(distortion);
+                }
+                
+                // Generate path
+                const path = this.generateMorphedPath(distortions);
+                this.morphingPath.setAttribute('d', path);
+                
+                // Update secondary rings with different frequencies
+                const secondaryDistortions = distortions.map((d, i) => 
+                    d * 0.7 + Math.sin(this.time * 2.5 + i * 0.5) * 8
+                );
+                const secondaryPath = this.generateMorphedPath(secondaryDistortions, this.baseRadius + 20);
+                this.secondaryRing.setAttribute('d', secondaryPath);
+                
+                const tertiaryDistortions = distortions.map((d, i) => 
+                    d * 0.5 + Math.cos(this.time * 1.8 + i * 0.3) * 6
+                );
+                const tertiaryPath = this.generateMorphedPath(tertiaryDistortions, this.baseRadius + 35);
+                this.tertiaryRing.setAttribute('d', tertiaryPath);
+            }
+
+            generateMorphedPath(distortions, radius = this.baseRadius) {
+                let path = '';
+                
+                for (let i = 0; i <= this.numPoints; i++) {
+                    const index = i % this.numPoints;
+                    const angle = (index / this.numPoints) * Math.PI * 2;
+                    const r = radius + distortions[index];
+                    
+                    const x = this.centerX + r * Math.cos(angle);
+                    const y = this.centerY + r * Math.sin(angle);
+                    
+                    if (i === 0) {
+                        path += `M ${x} ${y}`;
+                    } else {
+                        // Add smooth curves using quadratic bezier
+                        const prevIndex = (index - 1 + this.numPoints) % this.numPoints;
+                        const prevAngle = (prevIndex / this.numPoints) * Math.PI * 2;
+                        const prevR = radius + distortions[prevIndex];
+                        const prevX = this.centerX + prevR * Math.cos(prevAngle);
+                        const prevY = this.centerY + prevR * Math.sin(prevAngle);
+                        
+                        const controlX = (prevX + x) / 2;
+                        const controlY = (prevY + y) / 2;
+                        
+                        path += ` Q ${controlX} ${controlY} ${x} ${y}`;
+                    }
+                }
+                
+                path += ' Z';
+                return path;
+            }
+
+            updateAudioVisualizer() {
+                const bars = this.audioVisualizer.children;
+                
+                for (let i = 0; i < bars.length && i < this.audioLevels.length; i++) {
+                    const height = 2 + this.audioLevels[i] * 30;
+                    bars[i].style.height = height + 'px';
+                    
+                    // Add some randomness for dynamic effect in thinking state
+                    if (this.currentState === 'thinking') {
+                        bars[i].style.height = (height + Math.random() * 10) + 'px';
+                    }
+                }
+            }
+
+            updateStatus() {
+                document.getElementById('currentState').textContent = 
+                    this.currentState.charAt(0).toUpperCase() + this.currentState.slice(1);
+            }
+        }
+
+        // Initialize the voice-reactive rings when the page loads
+        window.addEventListener('load', () => {
+            new VoiceReactiveRings();
+        });
+    </script>
+</body>
+</html> 
