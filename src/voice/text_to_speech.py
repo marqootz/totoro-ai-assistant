@@ -204,7 +204,7 @@ class TextToSpeech:
             
             # Get voice path from config if no specific path provided
             if not audio_prompt_path:
-                # Priority order: K2-SO voice -> George voice -> None
+                # Priority order: K2-SO voice -> George voice -> Default voice -> None
                 if hasattr(config, 'K2SO_VOICE_PATH') and getattr(config, 'USE_K2SO_VOICE', False):
                     audio_prompt_path = config.K2SO_VOICE_PATH
                     logger.debug("Using K2-SO voice from config")
@@ -212,8 +212,8 @@ class TextToSpeech:
                     audio_prompt_path = config.GEORGE_VOICE_PATH
                     logger.debug("Using George voice from config")
                 else:
-                    audio_prompt_path = getattr(config, 'GEORGE_VOICE_PATH', None)
-                    logger.debug("Using fallback George voice path")
+                    audio_prompt_path = getattr(config, 'DEFAULT_VOICE_PATH', None)
+                    logger.debug("Using default voice path")
             
             # Coqui XTTS requires a speaker voice for cloning
             if not audio_prompt_path or not os.path.exists(audio_prompt_path):

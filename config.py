@@ -17,9 +17,12 @@ COQUI_MODEL = "tts_models/multilingual/multi-dataset/xtts_v2"
 COQUI_SPEED = 1.0  # Speech speed multiplier (0.5-2.0)
 
 # George's Voice Clone Settings
-GEORGE_VOICE_PATH = "assets/george-source-voice.mp3"
+GEORGE_VOICE_PATH = None
 USE_GEORGE_VOICE = False  # Set to False to disable George's voice
 
 # System Voice Settings (fallback when VOICE_PREFERENCE = "system")
-SYSTEM_VOICE_ID = "com.apple.eloquence.en-GB.Grandma"
-SYSTEM_VOICE_NAME = "Grandma (English (UK))"
+SYSTEM_VOICE_NAME = "Samantha"
+SYSTEM_VOICE_ID = None  # Will be set automatically if available
+
+# Default voice file for Coqui TTS
+DEFAULT_VOICE_PATH = os.path.join(os.path.dirname(__file__), "assets", "default_voice.wav")
