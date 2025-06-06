@@ -61,6 +61,7 @@ class VoiceRingServer:
         self.is_listening = False
         self.is_speaking = False
         self.is_thinking = False
+        self.is_continuous_mode = False
         
         # Event queue for processing
         self.event_queue = queue.Queue()
@@ -212,12 +213,10 @@ class VoiceRingServer:
                 # Start listening for wake word
                 if self.voice_recognizer.listen_for_wake_word(timeout=30):
                     logger.info("Wake word detected!")
-                    # Listen for command
-                    command = self.voice_recognizer.listen_for_command(timeout=10)
-                    if command:
-                        await self.process_voice_command(command)
-                    else:
-                        await self.speak_text("I didn't catch that. Could you try again?")
+                    # Enter continuous dialog mode
+                    self.is_continuous_mode = True
+                    self.voice_recognizer.start_continuous_listening()
+                    await self.speak_text("I'm listening. You can say 'goodbye' when you're done.")
             
             self.is_listening = True
             await self.set_state(RingState.LISTENING)
@@ -243,8 +242,10 @@ class VoiceRingServer:
         logger.info("🔇 Stopping voice recognition...")
         
         self.is_listening = False
+        self.is_continuous_mode = False
         
         if self.voice_recognizer:
+            self.voice_recognizer.stop_continuous_listening()
             self.voice_recognizer.stop_listening()
         
         await self.set_state(RingState.IDLE)
@@ -263,63 +264,51 @@ class VoiceRingServer:
             logger.error(f"Voice recognition worker error: {e}")
     
     def on_voice_command(self, command: str):
-        """Callback for when voice command is recognized"""
-        logger.info(f"🗣️ Voice command received: '{command}'")
+        """Handle voice commands from the recognizer"""
+        if not command:
+            return
+            
+        logger.info(f"Command received: {command}")
         
-        # Queue the voice event for async processing
-        event = VoiceEvent(
+        # Add command to event queue for processing
+        self.event_queue.put(VoiceEvent(
             event_type="voice_command",
-            data={"transcript": command},
+            data={"command": command},
             timestamp=time.time()
-        )
-        self.event_queue.put(event)
+        ))
+        
+        # Process command immediately if in continuous mode
+        if self.is_continuous_mode:
+            asyncio.run_coroutine_threadsafe(
+                self.process_voice_command(command),
+                asyncio.get_event_loop()
+            )
     
     async def process_voice_command(self, transcript: str):
-        """Process a voice command with AI assistance"""
-        await self.broadcast_to_all_clients({
-            "type": "speech_recognized",
-            "transcript": transcript,
-            "timestamp": time.time()
-        })
-        
-        # Enter thinking state
-        await self.set_state(RingState.THINKING)
-        self.is_thinking = True
-        
-        try:
-            # Process with AI assistant if available
-            if self.assistant:
-                logger.info("🤖 Processing with AI assistant...")
-                
-                # Simulate thinking time for better UX
-                thinking_time = 1.0 + len(transcript.split()) * 0.1  # Dynamic thinking time
-                await asyncio.sleep(min(thinking_time, 3.0))
-                
-                response = await self._get_ai_response(transcript)
-            else:
-                # Fallback demo response with echo
-                logger.info("⚠️ AI assistant not available, using echo mode")
-                await asyncio.sleep(1.0)
-                response = f"I heard you say: {transcript}"
+        """Process a voice command and generate response"""
+        if not transcript:
+            return
             
-            self.is_thinking = False
+        try:
+            # Set thinking state
+            await self.set_state(RingState.THINKING)
+            
+            # Get AI response
+            response = await self._get_ai_response(transcript)
             
             # Speak the response
             await self.speak_text(response)
             
         except Exception as e:
-            logger.error(f"Error processing voice command: {e}")
-            self.is_thinking = False
-            await self.set_state(RingState.LISTENING if self.is_listening else RingState.IDLE)
+            logger.error(f"Error processing command: {e}")
+            await self.speak_text("I'm sorry, I encountered an error processing your request.")
             
-            # Provide a fallback response even if there's an error
-            await self.speak_text("I'm having trouble processing that right now. Could you try again?")
-            
-            await self.broadcast_to_all_clients({
-                "type": "error",
-                "message": f"Error processing command: {e}",
-                "timestamp": time.time()
-            })
+        finally:
+            # Return to listening state if in continuous mode
+            if self.is_continuous_mode:
+                await self.set_state(RingState.LISTENING)
+            else:
+                await self.set_state(RingState.IDLE)
     
     async def _get_ai_response(self, text: str) -> str:
         """Get AI response (async wrapper for sync AI call)"""
@@ -458,7 +447,7 @@ class VoiceRingServer:
                     event = self.event_queue.get(timeout=0.1)
                     
                     if event.event_type == "voice_command":
-                        await self.process_voice_command(event.data["transcript"])
+                        await self.process_voice_command(event.data["command"])
                     
                     self.event_queue.task_done()
                     

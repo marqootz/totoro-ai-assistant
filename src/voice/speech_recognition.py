@@ -8,10 +8,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class VoiceRecognizer:
-    """Handles speech recognition with wake word detection"""
+    """Handles speech recognition with wake word detection and continuous dialog"""
     
-    def __init__(self, wake_word: str = "totoro", callback: Optional[Callable] = None):
+    def __init__(self, wake_word: str = "totoro", sleep_word: str = "goodbye", callback: Optional[Callable] = None):
         self.wake_word = wake_word.lower()
+        self.sleep_word = sleep_word.lower()
         self.callback = callback
         self.recognizer = sr.Recognizer()
         
@@ -21,9 +22,12 @@ class VoiceRecognizer:
         
         self.microphone = None
         self.is_listening = False
+        self.is_continuous_mode = False
         self.audio_queue = queue.Queue()
         self.stop_listening = None
         self.wake_word_detected = threading.Event()
+        self.last_speech_time = 0
+        self.continuous_timeout = 30  # Timeout for continuous mode in seconds
         
         # Use system default microphone (simplified)
         self._initialize_default_microphone()
@@ -221,18 +225,81 @@ class VoiceRecognizer:
             text = recognizer.recognize_google(audio).lower()
             logger.debug(f"Heard: {text}")
             
-            if self.wake_word in text:
-                logger.info(f"Wake word '{self.wake_word}' detected!")
-                # Extract command after wake word
-                command = self._extract_command(text)
-                if command and self.callback:
-                    self.callback(command)
-                    
+            # Update last speech time
+            self.last_speech_time = time.time()
+            
+            # Check for sleep word in continuous mode
+            if self.is_continuous_mode:
+                sleep_word_variations = [
+                    self.sleep_word,
+                    "goodbye",
+                    "good bye",
+                    "bye",
+                    "stop",
+                    "exit"
+                ]
+                
+                if any(variation in text for variation in sleep_word_variations):
+                    logger.info(f"Sleep word '{self.sleep_word}' detected!")
+                    self.is_continuous_mode = False
+                    self.stop_listening_for_commands()
+                    return
+            
+            # Check for wake word if not in continuous mode
+            if not self.is_continuous_mode:
+                wake_word_variations = [
+                    self.wake_word,
+                    "totoro",
+                    "toto",
+                    "to toro",
+                    "to to ro",
+                    "to to",
+                    "toro"
+                ]
+                
+                if any(variation in text for variation in wake_word_variations):
+                    logger.info(f"Wake word '{self.wake_word}' detected!")
+                    self.is_continuous_mode = True
+                    # Extract command after wake word
+                    command = self._extract_command(text)
+                    if command and self.callback:
+                        self.callback(command)
+                    return
+            
+            # In continuous mode, process all speech as commands
+            if self.is_continuous_mode and self.callback:
+                self.callback(text)
+                
         except sr.UnknownValueError:
             # Speech was unintelligible
             pass
         except sr.RequestError as e:
             logger.error(f"Could not request results from speech recognition service: {e}")
+    
+    def start_continuous_listening(self):
+        """Start continuous listening mode"""
+        if not self.is_listening:
+            self.start_listening()
+        
+        self.is_continuous_mode = True
+        self.last_speech_time = time.time()
+        
+        # Start a thread to check for timeout
+        def check_timeout():
+            while self.is_continuous_mode:
+                if time.time() - self.last_speech_time > self.continuous_timeout:
+                    logger.info(f"No speech detected for {self.continuous_timeout} seconds, exiting continuous mode")
+                    self.is_continuous_mode = False
+                    break
+                time.sleep(1)
+        
+        threading.Thread(target=check_timeout, daemon=True).start()
+        logger.info("Entered continuous dialog mode")
+    
+    def stop_continuous_listening(self):
+        """Stop continuous listening mode"""
+        self.is_continuous_mode = False
+        logger.info("Exited continuous dialog mode")
     
     def _extract_command(self, text: str) -> Optional[str]:
         """Extract command from text after wake word"""
