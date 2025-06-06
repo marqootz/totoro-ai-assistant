@@ -128,9 +128,21 @@ class VoiceRecognizer:
                         logger.info(f"👂 Heard: '{text}'")
                         consecutive_failures = 0  # Reset failure counter
                         
-                        # Check for wake word (more flexible matching)
-                        if self.wake_word in text.lower() or any(word in text.lower() for word in ["totoro", "toto", "to toro"]):
-                            logger.info(f"🎉 Wake word '{self.wake_word}' detected in: '{text}'")
+                        # More flexible wake word matching
+                        text_lower = text.lower()
+                        wake_word_variations = [
+                            self.wake_word,
+                            "totoro",
+                            "toto",
+                            "to toro",
+                            "to to ro",
+                            "to to",
+                            "toro"
+                        ]
+                        
+                        # Check if any variation of the wake word is present
+                        if any(variation in text_lower for variation in wake_word_variations):
+                            logger.info(f"🎉 Wake word detected in: '{text}'")
                             return True
                             
                     except sr.UnknownValueError:
@@ -224,11 +236,36 @@ class VoiceRecognizer:
     
     def _extract_command(self, text: str) -> Optional[str]:
         """Extract command from text after wake word"""
-        wake_word_index = text.find(self.wake_word)
-        if wake_word_index != -1:
-            command_start = wake_word_index + len(self.wake_word)
+        text_lower = text.lower()
+        wake_word_variations = [
+            self.wake_word,
+            "totoro",
+            "toto",
+            "to toro",
+            "to to ro",
+            "to to",
+            "toro"
+        ]
+        
+        # Find the earliest occurrence of any wake word variation
+        earliest_index = len(text)
+        for variation in wake_word_variations:
+            index = text_lower.find(variation)
+            if index != -1 and index < earliest_index:
+                earliest_index = index
+        
+        if earliest_index < len(text):
+            # Find the end of the wake word
+            command_start = earliest_index
+            for variation in wake_word_variations:
+                if text_lower[command_start:].startswith(variation):
+                    command_start += len(variation)
+                    break
+            
+            # Extract and clean up the command
             command = text[command_start:].strip()
             return command if command else None
+            
         return None
     
     def listen_for_command(self, timeout: int = 10) -> Optional[str]:
