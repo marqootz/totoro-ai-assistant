@@ -1,0 +1,610 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Intelligence Visual</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .intelligence-container {
+            width: 600px;
+            height: 600px;
+            position: relative;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(0,100,255,0.03) 0%, transparent 70%);
+        }
+
+        .core-visual {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+        }
+
+        /* Central energy core */
+        .energy-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(0,150,255,0.8) 0%, rgba(0,100,255,0.4) 50%, transparent 100%);
+            border-radius: 50%;
+            animation: coreBreath 4s ease-in-out infinite;
+        }
+
+        .energy-core::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(circle, rgba(0,255,150,0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: coreGlow 3s ease-in-out infinite alternate;
+        }
+
+        /* Neural network lines */
+        .neural-network {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.6;
+        }
+
+        .neural-line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, rgba(0,150,255,0.8), transparent);
+            border-radius: 2px;
+            animation: neuralPulse 2s ease-in-out infinite;
+        }
+
+        /* Floating particles */
+        .particle-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(0,200,255,0.8);
+            border-radius: 50%;
+            animation: particleFloat 8s linear infinite;
+        }
+
+        .particle.large {
+            width: 6px;
+            height: 6px;
+            background: rgba(0,255,150,0.6);
+            animation: particleFloat 12s linear infinite;
+        }
+
+        /* Orbital rings */
+        .orbital-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1px solid rgba(0,150,255,0.3);
+            border-radius: 50%;
+            animation: rotate 20s linear infinite;
+        }
+
+        .ring-1 {
+            width: 200px;
+            height: 200px;
+            margin: -100px 0 0 -100px;
+            animation-duration: 30s;
+        }
+
+        .ring-2 {
+            width: 300px;
+            height: 300px;
+            margin: -150px 0 0 -150px;
+            animation-duration: 45s;
+            animation-direction: reverse;
+        }
+
+        .ring-3 {
+            width: 400px;
+            height: 400px;
+            margin: -200px 0 0 -200px;
+            animation-duration: 60s;
+        }
+
+        /* Data streams */
+        .data-stream {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(0deg, transparent, rgba(0,255,200,0.8), transparent);
+            animation: dataFlow 3s ease-in-out infinite;
+        }
+
+        /* State indicators */
+        .state-indicator {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            font-weight: 300;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        /* State-specific styles */
+        .intelligence-container.listening {
+            background: radial-gradient(circle at center, rgba(0,255,100,0.05) 0%, transparent 70%);
+        }
+
+        .intelligence-container.listening .energy-core {
+            animation: coreListening 1s ease-in-out infinite;
+        }
+
+        .intelligence-container.listening .particle {
+            animation: particleListening 2s ease-in-out infinite;
+        }
+
+        .intelligence-container.responding {
+            background: radial-gradient(circle at center, rgba(255,100,0,0.05) 0%, transparent 70%);
+        }
+
+        .intelligence-container.responding .energy-core {
+            animation: coreResponding 0.8s ease-in-out infinite;
+        }
+
+        .intelligence-container.responding .neural-line {
+            animation: neuralResponding 1s ease-in-out infinite;
+        }
+
+        /* Keyframe animations */
+        @keyframes coreBreath {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        @keyframes coreGlow {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.3); }
+        }
+
+        @keyframes coreListening {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1.5);
+                background: radial-gradient(circle, rgba(0,255,100,0.9) 0%, rgba(0,200,100,0.5) 50%, transparent 100%);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.8);
+                background: radial-gradient(circle, rgba(0,255,150,1) 0%, rgba(0,255,100,0.7) 50%, transparent 100%);
+            }
+        }
+
+        @keyframes coreResponding {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1.3);
+                background: radial-gradient(circle, rgba(255,100,0,0.9) 0%, rgba(255,150,0,0.5) 50%, transparent 100%);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(2);
+                background: radial-gradient(circle, rgba(255,150,50,1) 0%, rgba(255,100,0,0.8) 50%, transparent 100%);
+            }
+        }
+
+        @keyframes neuralPulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 0.8; transform: scaleY(1.5); }
+        }
+
+        @keyframes neuralResponding {
+            0%, 100% { 
+                opacity: 0.8; 
+                background: linear-gradient(90deg, transparent, rgba(255,100,0,0.9), transparent);
+                transform: scaleY(1.5);
+            }
+            50% { 
+                opacity: 1; 
+                background: linear-gradient(90deg, transparent, rgba(255,150,50,1), transparent);
+                transform: scaleY(2);
+            }
+        }
+
+        @keyframes particleFloat {
+            0% { 
+                transform: translateY(400px) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(-400px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes particleListening {
+            0%, 100% {
+                background: rgba(0,255,100,1);
+                transform: scale(1);
+            }
+            50% {
+                background: rgba(0,255,150,1);
+                transform: scale(2);
+            }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes dataFlow {
+            0%, 100% { 
+                opacity: 0; 
+                transform: translateY(200px) scaleY(0.5);
+            }
+            50% { 
+                opacity: 1; 
+                transform: translateY(-200px) scaleY(2);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .intelligence-container {
+                width: 90vw;
+                height: 90vw;
+                max-width: 500px;
+                max-height: 500px;
+            }
+            
+            .core-visual {
+                width: 70%;
+                height: 70%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="intelligence-container" id="intelligenceContainer">
+        <div class="core-visual">
+            <!-- Central energy core -->
+            <div class="energy-core"></div>
+            
+            <!-- Orbital rings -->
+            <div class="orbital-ring ring-1"></div>
+            <div class="orbital-ring ring-2"></div>
+            <div class="orbital-ring ring-3"></div>
+            
+            <!-- Neural network -->
+            <div class="neural-network" id="neuralNetwork"></div>
+            
+            <!-- Floating particles -->
+            <div class="particle-field" id="particleField"></div>
+            
+            <!-- Data streams -->
+            <div class="data-streams" id="dataStreams"></div>
+        </div>
+        
+        <div class="state-indicator" id="stateIndicator">
+            Idle State
+        </div>
+    </div>
+
+    <script>
+        class IntelligenceVisual {
+            constructor() {
+                this.container = document.getElementById('intelligenceContainer');
+                this.stateIndicator = document.getElementById('stateIndicator');
+                this.currentState = 'idle';
+                this.isTransitioning = false;
+                
+                this.init();
+            }
+
+            init() {
+                this.createNeuralNetwork();
+                this.createParticleField();
+                this.createDataStreams();
+                this.setupControls();
+                this.startIdleAnimations();
+            }
+
+            createNeuralNetwork() {
+                const neuralNetwork = document.getElementById('neuralNetwork');
+                const numberOfLines = 20;
+                
+                for (let i = 0; i < numberOfLines; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'neural-line';
+                    
+                    const angle = (360 / numberOfLines) * i;
+                    const length = Math.random() * 150 + 50;
+                    const distance = Math.random() * 100 + 50;
+                    
+                    line.style.width = length + 'px';
+                    line.style.height = '2px';
+                    line.style.left = '50%';
+                    line.style.top = '50%';
+                    line.style.transformOrigin = '0 50%';
+                    line.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(${distance}px)`;
+                    line.style.animationDelay = Math.random() * 2 + 's';
+                    
+                    neuralNetwork.appendChild(line);
+                }
+            }
+
+            createParticleField() {
+                const particleField = document.getElementById('particleField');
+                const numberOfParticles = 30;
+                
+                for (let i = 0; i < numberOfParticles; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = Math.random() > 0.7 ? 'particle large' : 'particle';
+                    
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 8 + 's';
+                    particle.style.animationDuration = (8 + Math.random() * 8) + 's';
+                    
+                    particleField.appendChild(particle);
+                }
+            }
+
+            createDataStreams() {
+                const dataStreams = document.getElementById('dataStreams');
+                const numberOfStreams = 8;
+                
+                for (let i = 0; i < numberOfStreams; i++) {
+                    const stream = document.createElement('div');
+                    stream.className = 'data-stream';
+                    
+                    const angle = (360 / numberOfStreams) * i;
+                    const distance = Math.random() * 120 + 80;
+                    
+                    stream.style.height = '150px';
+                    stream.style.left = '50%';
+                    stream.style.top = '50%';
+                    stream.style.transformOrigin = '50% 0%';
+                    stream.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-${distance}px)`;
+                    stream.style.animationDelay = Math.random() * 3 + 's';
+                    
+                    dataStreams.appendChild(stream);
+                }
+            }
+
+            setState(newState) {
+                if (this.isTransitioning) return;
+                
+                this.isTransitioning = true;
+                this.currentState = newState;
+                
+                // Remove all state classes
+                this.container.classList.remove('idle', 'listening', 'responding');
+                
+                // Add new state class
+                this.container.classList.add(newState);
+                
+                // Update state indicator
+                const stateTexts = {
+                    idle: 'Idle State',
+                    listening: 'Listening...',
+                    responding: 'Responding...'
+                };
+                
+                this.stateIndicator.textContent = stateTexts[newState];
+                
+                // Trigger state-specific effects
+                this.triggerStateEffects(newState);
+                
+                // Reset transition flag after animations
+                setTimeout(() => {
+                    this.isTransitioning = false;
+                }, 1000);
+            }
+
+            triggerStateEffects(state) {
+                switch(state) {
+                    case 'listening':
+                        this.pulseOrbitalRings();
+                        this.intensifyParticles();
+                        break;
+                    case 'responding':
+                        this.activateDataFlow();
+                        this.amplifyNeuralActivity();
+                        break;
+                    case 'idle':
+                        this.returnToCalm();
+                        break;
+                }
+            }
+
+            pulseOrbitalRings() {
+                const rings = document.querySelectorAll('.orbital-ring');
+                rings.forEach((ring, index) => {
+                    gsap.to(ring, {
+                        duration: 0.5,
+                        scale: 1.2,
+                        borderColor: 'rgba(0,255,100,0.8)',
+                        ease: "power2.out",
+                        delay: index * 0.1
+                    });
+                });
+            }
+
+            intensifyParticles() {
+                const particles = document.querySelectorAll('.particle');
+                particles.forEach(particle => {
+                    gsap.to(particle, {
+                        duration: 0.3,
+                        scale: 2,
+                        backgroundColor: 'rgba(0,255,100,1)',
+                        ease: "power2.out"
+                    });
+                });
+            }
+
+            activateDataFlow() {
+                const streams = document.querySelectorAll('.data-stream');
+                streams.forEach((stream, index) => {
+                    gsap.to(stream, {
+                        duration: 0.4,
+                        scaleY: 3,
+                        background: 'linear-gradient(0deg, transparent, rgba(255,150,50,1), transparent)',
+                        ease: "power2.out",
+                        delay: index * 0.05
+                    });
+                });
+            }
+
+            amplifyNeuralActivity() {
+                const lines = document.querySelectorAll('.neural-line');
+                lines.forEach(line => {
+                    gsap.to(line, {
+                        duration: 0.3,
+                        scaleY: 3,
+                        opacity: 1,
+                        ease: "power2.out"
+                    });
+                });
+            }
+
+            returnToCalm() {
+                // Reset all elements to default state
+                gsap.to('.orbital-ring', {
+                    duration: 1,
+                    scale: 1,
+                    borderColor: 'rgba(0,150,255,0.3)',
+                    ease: "power2.out"
+                });
+                
+                gsap.to('.particle', {
+                    duration: 1,
+                    scale: 1,
+                    backgroundColor: 'rgba(0,200,255,0.8)',
+                    ease: "power2.out"
+                });
+                
+                gsap.to('.data-stream', {
+                    duration: 1,
+                    scaleY: 1,
+                    background: 'linear-gradient(0deg, transparent, rgba(0,255,200,0.8), transparent)',
+                    ease: "power2.out"
+                });
+                
+                gsap.to('.neural-line', {
+                    duration: 1,
+                    scaleY: 1,
+                    opacity: 0.6,
+                    ease: "power2.out"
+                });
+            }
+
+            setupControls() {
+                // Mouse interactions
+                this.container.addEventListener('click', () => {
+                    if (this.currentState === 'idle') {
+                        this.setState('listening');
+                        setTimeout(() => this.setState('responding'), 2000);
+                        setTimeout(() => this.setState('idle'), 5000);
+                    }
+                });
+
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case '1': this.setState('idle'); break;
+                        case '2': this.setState('listening'); break;
+                        case '3': this.setState('responding'); break;
+                        case ' ': this.cycleStates(); break;
+                    }
+                });
+            }
+
+            cycleStates() {
+                const states = ['idle', 'listening', 'responding'];
+                const currentIndex = states.indexOf(this.currentState);
+                const nextIndex = (currentIndex + 1) % states.length;
+                this.setState(states[nextIndex]);
+            }
+
+            startIdleAnimations() {
+                // Add subtle random variations to keep it alive
+                setInterval(() => {
+                    if (this.currentState === 'idle' && !this.isTransitioning) {
+                        // Random particle burst
+                        if (Math.random() > 0.7) {
+                            const randomParticles = document.querySelectorAll('.particle');
+                            const particleToAnimate = randomParticles[Math.floor(Math.random() * randomParticles.length)];
+                            
+                            gsap.to(particleToAnimate, {
+                                duration: 0.5,
+                                scale: 1.5,
+                                opacity: 1,
+                                ease: "power2.out",
+                                yoyo: true,
+                                repeat: 1
+                            });
+                        }
+                        
+                        // Random neural line flash
+                        if (Math.random() > 0.8) {
+                            const lines = document.querySelectorAll('.neural-line');
+                            const lineToFlash = lines[Math.floor(Math.random() * lines.length)];
+                            
+                            gsap.to(lineToFlash, {
+                                duration: 0.3,
+                                opacity: 1,
+                                scaleY: 2,
+                                ease: "power2.out",
+                                yoyo: true,
+                                repeat: 1
+                            });
+                        }
+                    }
+                }, 2000);
+            }
+        }
+
+        // Initialize the intelligence visual
+        const intelligence = new IntelligenceVisual();
+        
+        // Auto demonstration
+        setTimeout(() => {
+            if (intelligence.currentState === 'idle') {
+                intelligence.setState('listening');
+                setTimeout(() => intelligence.setState('responding'), 3000);
+                setTimeout(() => intelligence.setState('idle'), 6000);
+            }
+        }, 5000);
+    </script>
+</body>
+</html> 

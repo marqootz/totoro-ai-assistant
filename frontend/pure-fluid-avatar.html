@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure Fluid Avatar</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .avatar-stage {
+            width: 500px;
+            height: 500px;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent 50%);
+            border-radius: 50%;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .body {
+            width: 120px;
+            height: 180px;
+            background: linear-gradient(145deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 60px 60px 30px 30px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: breathe 4s ease-in-out infinite;
+            box-shadow: 
+                inset 0 20px 40px rgba(255,255,255,0.3),
+                0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .head {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(145deg, #ffeaa7, #fdcb6e);
+            border-radius: 50%;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: headFloat 6s ease-in-out infinite;
+            box-shadow: 
+                inset 0 15px 30px rgba(255,255,255,0.4),
+                0 15px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .face {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+        }
+
+        .eyes {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+        }
+
+        .eye {
+            width: 20px;
+            height: 20px;
+            background: #2d3436;
+            border-radius: 50%;
+            position: relative;
+            animation: blink 5s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        .eye::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            animation: eyeSparkle 3s ease-in-out infinite;
+        }
+
+        .mouth {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: #e17055;
+            border-radius: 50%;
+            animation: mouthTalk 4s ease-in-out infinite;
+        }
+
+        .cheeks {
+            position: absolute;
+            top: 45%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .cheek {
+            width: 15px;
+            height: 15px;
+            background: rgba(231, 112, 85, 0.3);
+            border-radius: 50%;
+            animation: cheekBlush 5s ease-in-out infinite;
+        }
+
+        .arms {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            height: 100px;
+        }
+
+        .arm {
+            width: 30px;
+            height: 80px;
+            background: linear-gradient(145deg, #4facfe, #00f2fe);
+            border-radius: 15px;
+            position: absolute;
+            top: 0;
+            animation: armFloat 7s ease-in-out infinite;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .arm.left {
+            left: -15px;
+            transform-origin: top center;
+            animation-delay: -1s;
+        }
+
+        .arm.right {
+            right: -15px;
+            transform-origin: top center;
+            animation-delay: -3s;
+        }
+
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            animation: particleFloat 8s linear infinite;
+        }
+
+        .cursor-follower {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            mix-blend-mode: screen;
+            backdrop-filter: blur(5px);
+            transition: transform 0.1s ease;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translateX(-50%) scaleY(1) scaleX(1); }
+            50% { transform: translateX(-50%) scaleY(1.05) scaleX(0.98); }
+        }
+
+        @keyframes headFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+            33% { transform: translateX(-50%) translateY(-5px) rotate(1deg); }
+            66% { transform: translateX(-50%) translateY(3px) rotate(-1deg); }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        @keyframes eyeSparkle {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes mouthTalk {
+            0%, 100% { transform: translateX(-50%) scale(1); border-radius: 50%; }
+            25% { transform: translateX(-50%) scale(1.3, 0.8); border-radius: 50% 50% 40% 40%; }
+            50% { transform: translateX(-50%) scale(0.8, 1.2); border-radius: 40% 40% 50% 50%; }
+            75% { transform: translateX(-50%) scale(1.1, 0.9); border-radius: 45% 45% 55% 55%; }
+        }
+
+        @keyframes cheekBlush {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
+        @keyframes armFloat {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        @keyframes particleFloat {
+            0% { 
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Emotion-specific animations */
+        .happy .head {
+            animation: headFloat 3s ease-in-out infinite, happyBounce 1s ease-in-out infinite;
+        }
+
+        .excited .character {
+            animation: excitedShake 0.5s ease-in-out infinite;
+        }
+
+        .sleepy .eye {
+            animation: sleepyBlink 2s ease-in-out infinite;
+        }
+
+        .thinking .head {
+            animation: headFloat 6s ease-in-out infinite, thinkingTilt 4s ease-in-out infinite;
+        }
+
+        .surprised .eye {
+            animation: blink 5s ease-in-out infinite, surprisedEyes 0.1s ease-in-out;
+        }
+
+        .surprised .mouth {
+            animation: mouthTalk 4s ease-in-out infinite, surprisedMouth 0.1s ease-in-out;
+        }
+
+        @keyframes happyBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0px); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        @keyframes excitedShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        @keyframes sleepyBlink {
+            0%, 80%, 100% { transform: scaleY(0.3); }
+            90% { transform: scaleY(0.1); }
+        }
+
+        @keyframes thinkingTilt {
+            0%, 100% { transform: translateX(-50%) rotate(-2deg); }
+            50% { transform: translateX(-50%) rotate(2deg); }
+        }
+
+        @keyframes surprisedEyes {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.5); }
+        }
+
+        @keyframes surprisedMouth {
+            0% { transform: translateX(-50%) scale(1); }
+            100% { transform: translateX(-50%) scale(1.8); }
+        }
+
+        /* Interaction zones */
+        .interaction-zone {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .zone-head {
+            top: -20px;
+            left: 50%;
+            width: 140px;
+            height: 140px;
+            transform: translateX(-50%);
+        }
+
+        .zone-body {
+            bottom: 0;
+            left: 50%;
+            width: 120px;
+            height: 180px;
+            transform: translateX(-50%);
+            border-radius: 60px 60px 30px 30px;
+        }
+
+        .zone-arms {
+            top: 20px;
+            width: 100%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-follower" id="cursorFollower"></div>
+    
+    <div class="avatar-stage">
+        <div class="character" id="character">
+            <div class="body"></div>
+            
+            <div class="head">
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye left-eye"></div>
+                        <div class="eye right-eye"></div>
+                    </div>
+                    <div class="mouth" id="mouth"></div>
+                    <div class="cheeks">
+                        <div class="cheek left-cheek"></div>
+                        <div class="cheek right-cheek"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arms">
+                <div class="arm left"></div>
+                <div class="arm right"></div>
+            </div>
+
+            <!-- Invisible interaction zones -->
+            <div class="interaction-zone zone-head" data-emotion="happy"></div>
+            <div class="interaction-zone zone-body" data-emotion="excited"></div>
+            <div class="interaction-zone zone-arms" data-emotion="wave"></div>
+        </div>
+        
+        <div class="floating-particles" id="particles"></div>
+    </div>
+
+    <script>
+        class PureFluidAvatar {
+            constructor() {
+                this.character = document.getElementById('character');
+                this.mouth = document.getElementById('mouth');
+                this.cursorFollower = document.getElementById('cursorFollower');
+                this.currentMood = 'neutral';
+                this.isAnimating = false;
+                this.lastInteraction = Date.now();
+                
+                this.init();
+            }
+
+            init() {
+                this.createParticles();
+                this.startIdleAnimation();
+                this.setupResponsiveMovement();
+                this.setupInteractionZones();
+                this.setupCursorFollower();
+                this.startAutoEmotions();
+            }
+
+            createParticles() {
+                const particlesContainer = document.getElementById('particles');
+                
+                // Create floating particles
+                for (let i = 0; i < 15; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 8 + 's';
+                    particle.style.animationDuration = (8 + Math.random() * 4) + 's';
+                    particlesContainer.appendChild(particle);
+                }
+            }
+
+            setMood(mood) {
+                if (this.isAnimating && mood !== 'wave') return;
+                
+                this.currentMood = mood;
+                this.character.className = `character ${mood}`;
+                this.lastInteraction = Date.now();
+                
+                // Trigger mood-specific animations
+                this.triggerMoodAnimation(mood);
+            }
+
+            triggerMoodAnimation(mood) {
+                switch(mood) {
+                    case 'happy':
+                        this.animateHappiness();
+                        break;
+                    case 'excited':
+                        this.animateExcitement();
+                        break;
+                    case 'surprised':
+                        this.animateSurprise();
+                        break;
+                    case 'sleepy':
+                        this.animateSleepiness();
+                        break;
+                    case 'thinking':
+                        this.animateThinking();
+                        break;
+                    case 'wave':
+                        this.wave();
+                        break;
+                    default:
+                        this.returnToNeutral();
+                }
+            }
+
+            animateHappiness() {
+                gsap.to('.head', {
+                    duration: 0.5,
+                    scale: 1.1,
+                    ease: "back.out(1.7)",
+                    yoyo: true,
+                    repeat: 1
+                });
+                
+                gsap.to('.cheek', {
+                    duration: 0.3,
+                    scale: 1.3,
+                    opacity: 0.8,
+                    ease: "power2.out",
+                    yoyo: true,
+                    repeat: 3
+                });
+            }
+
+            animateExcitement() {
+                gsap.to('.character', {
+                    duration: 2,
+                    rotation: "+=360",
+                    ease: "power2.inOut"
+                });
+                
+                gsap.to('.arms .arm', {
+                    duration: 0.2,
+                    rotation: 45,
+                    repeat: 8,
+                    yoyo: true,
+                    ease: "power2.inOut"
+                });
+            }
+
+            animateSurprise() {
+                gsap.to('.eye', {
+                    duration: 0.1,
+                    scale: 1.8,
+                    ease: "power2.out"
+                });
+                
+                gsap.to('.mouth', {
+                    duration: 0.1,
+                    scale: 2,
+                    borderRadius: "50%",
+                    ease: "power2.out"
+                });
+                
+                setTimeout(() => {
+                    gsap.to('.eye, .mouth', {
+                        duration: 1,
+                        scale: 1,
+                        ease: "elastic.out(1, 0.3)"
+                    });
+                }, 500);
+            }
+
+            animateSleepiness() {
+                gsap.to('.head', {
+                    duration: 3,
+                    rotation: -10,
+                    ease: "power2.inOut",
+                    yoyo: true,
+                    repeat: 2
+                });
+            }
+
+            animateThinking() {
+                gsap.to('.head', {
+                    duration: 0.5,
+                    x: -5,
+                    rotation: -5,
+                    ease: "power2.inOut",
+                    yoyo: true,
+                    repeat: 3
+                });
+            }
+
+            wave() {
+                gsap.to('.arm.right', {
+                    duration: 0.3,
+                    rotation: -60,
+                    transformOrigin: "bottom center",
+                    ease: "power2.out",
+                    yoyo: true,
+                    repeat: 5
+                });
+            }
+
+            returnToNeutral() {
+                gsap.to('.head, .eye, .mouth, .character, .arm', {
+                    duration: 1,
+                    scale: 1,
+                    rotation: 0,
+                    x: 0,
+                    y: 0,
+                    ease: "elastic.out(1, 0.3)"
+                });
+            }
+
+            startIdleAnimation() {
+                // Subtle breathing animation for the whole character
+                gsap.to('.character', {
+                    duration: 4,
+                    scale: 1.02,
+                    ease: "sine.inOut",
+                    yoyo: true,
+                    repeat: -1
+                });
+                
+                // Random eye movements
+                setInterval(() => {
+                    if (!this.isAnimating) {
+                        gsap.to('.eyes', {
+                            duration: 0.1,
+                            x: Math.random() * 6 - 3,
+                            y: Math.random() * 2 - 1,
+                            ease: "power2.out"
+                        });
+                        
+                        setTimeout(() => {
+                            gsap.to('.eyes', {
+                                duration: 0.5,
+                                x: 0,
+                                y: 0,
+                                ease: "power2.out"
+                            });
+                        }, 200);
+                    }
+                }, 3000 + Math.random() * 2000);
+            }
+
+            setupResponsiveMovement() {
+                let mouseX = 0;
+                let mouseY = 0;
+                
+                document.addEventListener('mousemove', (e) => {
+                    mouseX = (e.clientX / window.innerWidth - 0.5) * 20;
+                    mouseY = (e.clientY / window.innerHeight - 0.5) * 10;
+                });
+                
+                // Smooth following animation
+                gsap.ticker.add(() => {
+                    if (!this.isAnimating) {
+                        gsap.to('.eyes', {
+                            duration: 1,
+                            x: mouseX * 0.3,
+                            y: mouseY * 0.2,
+                            ease: "power2.out"
+                        });
+                        
+                        gsap.to('.head', {
+                            duration: 2,
+                            rotation: mouseX * 0.1,
+                            ease: "power2.out"
+                        });
+                    }
+                });
+            }
+
+            setupInteractionZones() {
+                const zones = document.querySelectorAll('.interaction-zone');
+                
+                zones.forEach(zone => {
+                    zone.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const emotion = zone.dataset.emotion;
+                        this.setMood(emotion);
+                    });
+                    
+                    zone.addEventListener('mouseenter', () => {
+                        zone.style.opacity = '0.1';
+                        zone.style.background = 'rgba(255,255,255,0.1)';
+                    });
+                    
+                    zone.addEventListener('mouseleave', () => {
+                        zone.style.opacity = '0';
+                    });
+                });
+            }
+
+            setupCursorFollower() {
+                document.addEventListener('mousemove', (e) => {
+                    gsap.to(this.cursorFollower, {
+                        duration: 0.1,
+                        x: e.clientX - 10,
+                        y: e.clientY - 10,
+                        ease: "power2.out"
+                    });
+                });
+
+                // Pulse cursor on hover over avatar
+                const avatarStage = document.querySelector('.avatar-stage');
+                avatarStage.addEventListener('mouseenter', () => {
+                    gsap.to(this.cursorFollower, {
+                        duration: 0.3,
+                        scale: 2,
+                        ease: "back.out(1.7)"
+                    });
+                });
+
+                avatarStage.addEventListener('mouseleave', () => {
+                    gsap.to(this.cursorFollower, {
+                        duration: 0.3,
+                        scale: 1,
+                        ease: "back.out(1.7)"
+                    });
+                });
+            }
+
+            startAutoEmotions() {
+                // Auto emotional expressions when idle
+                setInterval(() => {
+                    const timeSinceLastInteraction = Date.now() - this.lastInteraction;
+                    
+                    if (timeSinceLastInteraction > 8000 && !this.isAnimating) {
+                        const emotions = ['happy', 'thinking', 'surprised', 'sleepy'];
+                        const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+                        this.setMood(randomEmotion);
+                        
+                        setTimeout(() => {
+                            this.returnToNeutral();
+                        }, 3000);
+                    }
+                }, 10000);
+            }
+        }
+
+        // Initialize the avatar
+        const avatar = new PureFluidAvatar();
+        
+        // Add click anywhere to trigger random emotion
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.interaction-zone')) {
+                const emotions = ['happy', 'excited', 'surprised', 'thinking'];
+                const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+                avatar.setMood(randomEmotion);
+            }
+        });
+
+        // Add keyboard interactions for accessibility
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1': avatar.setMood('happy'); break;
+                case '2': avatar.setMood('excited'); break;
+                case '3': avatar.setMood('surprised'); break;
+                case '4': avatar.setMood('thinking'); break;
+                case '5': avatar.setMood('sleepy'); break;
+                case ' ': avatar.wave(); break;
+                case 'r': avatar.returnToNeutral(); break;
+            }
+        });
+    </script>
+</body>
+</html> 
